@@ -1,4 +1,5 @@
 defmodule KujiraOrcaTest do
+  alias Kujira.Orca
   use ExUnit.Case
   doctest Kujira.Orca
 
@@ -219,5 +220,35 @@ defmodule KujiraOrcaTest do
 
     {:ok, queues} = Kujira.Orca.list_queues(channel)
     assert Enum.count(queues) > 10
+  end
+
+  test "extracts a liquidation from a transaction" do
+    {:ok, channel} =
+      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+        interceptors: [{GRPC.Logger.Client, level: :debug}]
+      )
+
+    {:ok, %{tx_response: response}} =
+      Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
+        # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
+        hash: "BC02D586A26C5FBA1B95F79332316BFE58E037E7FD94CE2E377011FC1BDBD4CD"
+      })
+
+    liquidations = Orca.Liquidation.from_tx_response(response)
+
+    assert liquidations == [
+             %Orca.Liquidation{
+               bid_amount: 4_100_551_365,
+               collateral_amount: 6_400_000_000_014_715_799_261,
+               fee_amount: 41_005_512,
+               height: 16_840_386,
+               market_address:
+                 "kujira1zc3a6ncr4lajr9du6chuxwef34l8ppj9h8x0yc3fslkk82da9m2sajlmv2",
+               queue_address: "kujira1nt76mfz0jx9dzz6mgxd2hvxwzs9tjkn9sm335mrx66zc4xx7mh5qpr8v2v",
+               repay_amount: 4_059_545_852,
+               timestamp: ~N[2024-01-23 14:10:54],
+               txhash: "BC02D586A26C5FBA1B95F79332316BFE58E037E7FD94CE2E377011FC1BDBD4CD"
+             }
+           ]
   end
 end
