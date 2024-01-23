@@ -30,16 +30,15 @@ defmodule Kujira.Orca do
   memoize this function with a manual flush
   """
 
-  @spec list_queues(Channel.t()) :: {:ok, list(Queue.t())} | :error
+  @spec list_queues(GRPC.Channel.t(), binary()) :: :error | {:ok, any()}
   def list_queues(channel, code_ids \\ @code_ids) do
     with {:ok, contracts} <- Contract.by_codes(channel, code_ids),
          {:ok, queues} <-
-           Enum.reduce(contracts, {:ok, []}, fn
-             el, {:ok, queues} ->
-               case get_queue(channel, el) do
-                 {:ok, queue} -> {:ok, [queue | queues]}
-                 err -> err
-               end
+           contracts
+           |> Task.async_stream(&get_queue(channel, &1))
+           |> Enum.reduce({:ok, []}, fn
+             {:ok, queue}, {:ok, queues} ->
+               {:ok, [queue | queues]}
 
              _, err ->
                err
