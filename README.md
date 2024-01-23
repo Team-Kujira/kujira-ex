@@ -2,6 +2,8 @@
 
 Elixir interfaces to Kujira dApps, for building indexers, APIs and bots
 
+**N.B. This is currently a work in progress, as we begin to componentise & open source the infrastructure that powers the Kujira dApps**
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
