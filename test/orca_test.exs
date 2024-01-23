@@ -210,4 +210,14 @@ defmodule KujiraOrcaTest do
       assert is_integer(pool.epoch)
     end
   end
+
+  test "fetches all queues" do
+    {:ok, channel} =
+      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+        interceptors: [{GRPC.Logger.Client, level: :debug}]
+      )
+
+    {:ok, queues} = Kujira.Orca.list_queues(channel)
+    assert Enum.count(queues) > 10
+  end
 end
