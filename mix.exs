@@ -31,7 +31,11 @@ defmodule Kujira.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+      {:decimal, "~> 2.0"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:grpc, "~> 0.5.0"},
+      {:kujira_proto, "~> 0.9.3"},
+      {:jason, "~> 1.2"}
     ]
   end
 end
