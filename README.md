@@ -1,6 +1,6 @@
 # Kujira
 
-Protobuf bindings and gRPC clients for the Kujira Blockchain
+Elixir interfaces to Kujira dApps, for building indexers, APIs and bots
 
 ## Installation
 
