@@ -22,7 +22,7 @@ defmodule Kujira.Contract do
     :world
   end
 
-  @spec by_code(GRPC.Channel.t(), String.t()) ::
+  @spec by_code(GRPC.Channel.t(), integer()) ::
           {:ok, list(String.t())} | {:error, GRPC.RPCError.t()}
   def by_code(channel, code_id) do
     with {:ok, %{contracts: contracts}} <-
@@ -34,7 +34,7 @@ defmodule Kujira.Contract do
     end
   end
 
-  @spec by_codes(GRPC.Channel.t(), String.t()) ::
+  @spec by_codes(GRPC.Channel.t(), list(integer())) ::
           {:ok, list(String.t())} | {:error, GRPC.RPCError.t()}
   def by_codes(channel, code_ids) do
     Enum.reduce(code_ids, {:ok, []}, fn
