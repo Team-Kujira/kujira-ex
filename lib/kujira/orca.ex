@@ -80,4 +80,22 @@ defmodule Kujira.Orca do
         :error
     end
   end
+
+  @doc """
+  Loads a user's bids for a specific Queue
+  """
+  @spec load_bids(Channel.t(), Queue.t(), String.t()) :: {:ok, Bid.t()} | :error
+  def load_bids(channel, queue, address, start_after \\ nil) do
+    with {:ok, %{"bids" => bids}} <-
+           Contract.query_state_smart(channel, queue.address, %{
+             bids_by_user: %{bidder: address, start_after: start_after, limit: 30}
+           }) do
+      # TODO: Page through > 30
+      bids = Enum.map(bids, &Bid.from_query(queue, &1))
+      {:ok, bids}
+    else
+      _ ->
+        :error
+    end
+  end
 end

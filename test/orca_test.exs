@@ -276,4 +276,32 @@ defmodule KujiraOrcaTest do
              premium: Decimal.new("0.01")
            }
   end
+
+  test "queries a user's bids" do
+    {:ok, channel} =
+      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+        interceptors: [{GRPC.Logger.Client, level: :debug}]
+      )
+
+    {:ok, queue} =
+      Kujira.Orca.get_queue(
+        channel,
+        #  Mainnet LUNA - USK
+        "kujira1sdlp8eqp4md6waqv2x9vlvt9dtzyx9ztt0zvkfxaw9kxh3t5gdvqypxlwz"
+      )
+
+    {:ok, bids} =
+      Kujira.Orca.load_bids(channel, queue, "kujira1ltvwg69sw3c5z99c6rr08hal7v0kdzfxz07yj5")
+
+    assert bids == [
+             %Kujira.Orca.Bid{
+               activation_time: nil,
+               bid_amount: 0,
+               bidder: "kujira1ltvwg69sw3c5z99c6rr08hal7v0kdzfxz07yj5",
+               filled_amount: 1_446_935,
+               id: "1",
+               premium: Decimal.new("0.01")
+             }
+           ]
+  end
 end
