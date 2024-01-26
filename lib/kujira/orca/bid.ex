@@ -24,7 +24,7 @@ defmodule Kujira.Orca.Bid do
           bid_amount: integer(),
           filled_amount: integer(),
           premium: Decimal.t(),
-          activation_time: NaiveDateTime.t() | nil
+          activation_time: DateTime.t() | nil
         }
 
   def from_query(%Queue{} = queue, %{

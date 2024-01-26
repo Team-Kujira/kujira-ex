@@ -42,7 +42,7 @@ defmodule Kujira.Orca.Liquidation do
   @type t :: %__MODULE__{
           txhash: String.t(),
           height: integer(),
-          timestamp: NaiveDateTime.t(),
+          timestamp: DateTime.t(),
           queue_address: String.t(),
           market_address: String.t(),
           bid_amount: integer(),
@@ -58,13 +58,15 @@ defmodule Kujira.Orca.Liquidation do
         nil
 
       xs ->
+        {:ok, timestamp, 0} = DateTime.from_iso8601(response.timestamp)
+
         Enum.map(
           xs,
           &%{
             &1
             | height: response.height,
               txhash: response.txhash,
-              timestamp: NaiveDateTime.from_iso8601!(response.timestamp)
+              timestamp: timestamp
           }
         )
     end

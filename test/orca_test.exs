@@ -246,7 +246,7 @@ defmodule KujiraOrcaTest do
                  "kujira1zc3a6ncr4lajr9du6chuxwef34l8ppj9h8x0yc3fslkk82da9m2sajlmv2",
                queue_address: "kujira1nt76mfz0jx9dzz6mgxd2hvxwzs9tjkn9sm335mrx66zc4xx7mh5qpr8v2v",
                repay_amount: 4_059_545_852,
-               timestamp: ~N[2024-01-23 14:10:54],
+               timestamp: ~U[2024-01-23T14:10:54Z],
                txhash: "BC02D586A26C5FBA1B95F79332316BFE58E037E7FD94CE2E377011FC1BDBD4CD"
              }
            ]
