@@ -7,17 +7,20 @@ defmodule Kujira.Orca do
   alias Kujira.Contract
   alias Kujira.Orca.Bid
   alias Kujira.Orca.Queue
+  use Memoize
 
   @code_ids Application.get_env(:kujira, __MODULE__, code_ids: [108, 122, 216, 220])
             |> Keyword.get(:code_ids)
 
   @doc """
-  Fetches the Queue contract and its current config from the chain. This rarely changes and
-  can be safely memoized with a manual flush
+  Fetches the Queue contract and its current config from the chain.
+
+  Config is very very rarely changed, if ever, and so this function is Memoized by default.
+  Clear with `Memoize.invalidate Kujira.Orca, :get_queue`
   """
 
   @spec get_queue(Channel.t(), String.t()) :: {:ok, Queue.t()} | {:error, :not_found}
-  def get_queue(channel, address) do
+  defmemo get_queue(channel, address) do
     with {:ok, config} <- Contract.query_state_smart(channel, address, %{config: %{}}),
          {:ok, queue} <- Queue.from_config(address, config) do
       {:ok, queue}
@@ -28,12 +31,15 @@ defmodule Kujira.Orca do
   end
 
   @doc """
-  Fetches all Liquidation Queues. This will only change when new Queues are deployed, so it is recommended to
-  memoize this function with a manual flush
+  Fetches all Liquidation Queues. This will only change when config changes or new Queues are added.
+  It's Memoized, clearing every 24h.
+
+  Manually clear with `Memoize.invalidate Kujira.Orca, :list_queues`
   """
 
   @spec list_queues(GRPC.Channel.t(), list(integer())) :: :error | {:ok, any()}
-  def list_queues(channel, code_ids \\ @code_ids) when is_list(code_ids) do
+  defmemo list_queues(channel, code_ids \\ @code_ids) when is_list(code_ids),
+    expires_in: 24 * 60 * 1000 do
     with {:ok, contracts} <- Contract.by_codes(channel, code_ids),
          {:ok, queues} <-
            contracts
