@@ -219,6 +219,7 @@ defmodule KujiraOrcaTest do
       )
 
     {:ok, queues} = Kujira.Orca.list_queues(channel)
+    [%Kujira.Orca.Queue{} | _] = queues
     assert Enum.count(queues) > 10
   end
 
