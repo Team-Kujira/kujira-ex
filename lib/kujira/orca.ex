@@ -16,18 +16,20 @@ defmodule Kujira.Orca do
   Fetches the Queue contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate Kujira.Orca, :get_queue`
+  Clear with `Memoize.invalidate Kujira.Orca, :get_queue, [address]`
   """
 
   @spec get_queue(Channel.t(), String.t()) :: {:ok, Queue.t()} | {:error, :not_found}
-  defmemo get_queue(channel, address) do
-    with {:ok, config} <- Contract.query_state_smart(channel, address, %{config: %{}}),
-         {:ok, queue} <- Queue.from_config(address, config) do
-      {:ok, queue}
-    else
-      _ ->
-        {:error, :not_found}
-    end
+  def get_queue(channel, address) do
+    Memoize.Cache.get_or_run({__MODULE__, :resolve, [address]}, fn ->
+      with {:ok, config} <- Contract.query_state_smart(channel, address, %{config: %{}}),
+           {:ok, queue} <- Queue.from_config(address, config) do
+        {:ok, queue}
+      else
+        _ ->
+          {:error, :not_found}
+      end
+    end)
   end
 
   @doc """
@@ -38,24 +40,29 @@ defmodule Kujira.Orca do
   """
 
   @spec list_queues(GRPC.Channel.t(), list(integer())) :: :error | {:ok, any()}
-  defmemo list_queues(channel, code_ids \\ @code_ids) when is_list(code_ids),
-    expires_in: 24 * 60 * 1000 do
-    with {:ok, contracts} <- Contract.by_codes(channel, code_ids),
-         {:ok, queues} <-
-           contracts
-           |> Task.async_stream(&get_queue(channel, &1))
-           |> Enum.reduce({:ok, []}, fn
-             {:ok, queue}, {:ok, queues} ->
-               {:ok, [queue | queues]}
+  def list_queues(channel, code_ids \\ @code_ids) when is_list(code_ids) do
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :resolve, [code_ids]},
+      fn ->
+        with {:ok, contracts} <- Contract.by_codes(channel, code_ids),
+             {:ok, queues} <-
+               contracts
+               |> Task.async_stream(&get_queue(channel, &1))
+               |> Enum.reduce({:ok, []}, fn
+                 {:ok, queue}, {:ok, queues} ->
+                   {:ok, [queue | queues]}
 
-             _, err ->
-               err
-           end) do
-      {:ok, queues}
-    else
-      _ ->
-        :error
-    end
+                 _, err ->
+                   err
+               end) do
+          {:ok, queues}
+        else
+          _ ->
+            :error
+        end
+      end,
+      expires_in: 24 * 60 * 1000
+    )
   end
 
   @doc """
