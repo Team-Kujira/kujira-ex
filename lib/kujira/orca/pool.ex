@@ -2,7 +2,7 @@ defmodule Kujira.Orca.Pool do
   @moduledoc """
   A pool of bid tokens at a specific premium %, for a specific Queue
 
-   ## Fields
+  ## Fields
   * `:premium` - The premium "charged" above the current market rate (ie the discount that the collateral is bought for)
 
   * `:total` - The total amount of activated bid token in the pool

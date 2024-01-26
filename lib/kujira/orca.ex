@@ -5,13 +5,15 @@ defmodule Kujira.Orca do
 
   alias GRPC.Channel
   alias Kujira.Contract
+  alias Kujira.Orca.Bid
   alias Kujira.Orca.Queue
 
   @code_ids Application.get_env(:kujira, __MODULE__, code_ids: [108, 122, 216, 220])
             |> Keyword.get(:code_ids)
 
   @doc """
-  Fetches the Queue contract and its current config from the chain
+  Fetches the Queue contract and its current config from the chain. This rarely changes and
+  can be safely memoized with a manual flush
   """
 
   @spec get_queue(Channel.t(), String.t()) :: {:ok, Queue.t()} | {:error, :not_found}
@@ -59,6 +61,20 @@ defmodule Kujira.Orca do
     with {:ok, %{"bid_pools" => bid_pools}} <-
            Contract.query_state_smart(channel, queue.address, %{bid_pools: %{limit: 30}}) do
       {:ok, Queue.load_pools(bid_pools, queue)}
+    else
+      _ ->
+        :error
+    end
+  end
+
+  @doc """
+  Loads a bid for a specific Queue
+  """
+  @spec load_bid(Channel.t(), Queue.t(), String.t()) :: {:ok, Bid.t()} | :error
+  def load_bid(channel, queue, idx) do
+    with {:ok, bid} <-
+           Contract.query_state_smart(channel, queue.address, %{bid: %{bid_idx: idx}}) do
+      {:ok, Bid.from_query(queue, bid)}
     else
       _ ->
         :error
