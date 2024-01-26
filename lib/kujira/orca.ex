@@ -97,7 +97,7 @@ defmodule Kujira.Orca do
   @doc """
   Loads a user's bids for a specific Queue
   """
-  @spec load_bids(Channel.t(), Queue.t(), String.t()) :: {:ok, Bid.t()} | :error
+  @spec load_bids(Channel.t(), Queue.t(), String.t()) :: {:ok, list(Bid.t())} | :error
   def load_bids(channel, queue, address, start_after \\ nil) do
     with {:ok, %{"bids" => bids}} <-
            Contract.query_state_smart(channel, queue.address, %{
