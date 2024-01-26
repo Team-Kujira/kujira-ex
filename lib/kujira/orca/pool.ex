@@ -16,6 +16,9 @@ defmodule Kujira.Orca.Pool do
           epoch: integer() | :not_loaded
         }
 
+  @doc """
+  Calculates a new Pool from the config on the Queue
+  """
   @spec calculate(Decimal.t(), integer()) :: __MODULE__.t()
   def calculate(premium_rate_per_slot, slot) do
     %__MODULE__{

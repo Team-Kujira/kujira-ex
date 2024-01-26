@@ -14,7 +14,10 @@ defmodule Kujira.Orca.Bid do
   * `:activation_time` - When not nil, the bid must be activated at or after this time
   """
 
+  alias Cosmos.Base.Abci.V1beta1.TxResponse
   alias Kujira.Orca.Queue
+  alias Tendermint.Abci.Event
+  alias Tendermint.Abci.EventAttribute
 
   defstruct [:id, :bidder, :bid_amount, :filled_amount, :premium, :activation_time]
 
@@ -24,7 +27,7 @@ defmodule Kujira.Orca.Bid do
           bid_amount: integer(),
           filled_amount: integer(),
           premium: Decimal.t(),
-          activation_time: DateTime.t() | nil
+          activation_time: DateTime.t() | nil | :not_loaded
         }
 
   def from_query(%Queue{} = queue, %{
@@ -53,4 +56,63 @@ defmodule Kujira.Orca.Bid do
       activation_time: activation_time
     }
   end
+
+  @doc """
+  Returns all new bids found in a specific transaction
+  """
+  @spec from_tx_response(GRPC.Channel.t(), TxResponse.t()) ::
+          list({String.t(), __MODULE__.t()}) | nil
+  def from_tx_response(channel, response) do
+    case scan_events(channel, response.events) do
+      [] ->
+        nil
+
+      xs ->
+        xs
+    end
+  end
+
+  defp scan_events(channel, events, collection \\ [])
+  defp scan_events(_channel, [], collection), do: collection
+
+  defp scan_events(
+         channel,
+         [
+           %Event{
+             type: "transfer",
+             attributes: [_, %EventAttribute{key: "sender", value: bidder_address}, _]
+           },
+           _,
+           %Event{
+             type: "wasm",
+             attributes: [
+               %EventAttribute{key: "_contract_address", value: queue_address},
+               %EventAttribute{key: "action", value: "submit_bid"},
+               %EventAttribute{key: "bid_idx", value: bid_idx},
+               %EventAttribute{key: "amount", value: amount},
+               %EventAttribute{key: "premium_slot", value: premium_slot}
+             ]
+           }
+           | rest
+         ],
+         collection
+       ) do
+    {:ok, queue} = Kujira.Orca.get_queue(channel, queue_address)
+
+    scan_events(channel, rest, [
+      {queue_address,
+       %__MODULE__{
+         id: bid_idx,
+         bidder: bidder_address,
+         bid_amount: String.to_integer(amount),
+         filled_amount: 0,
+         premium:
+           queue.bid_pools |> Enum.at(String.to_integer(premium_slot)) |> Map.get(:premium),
+         activation_time: :not_loaded
+       }}
+      | collection
+    ])
+  end
+
+  defp scan_events(channel, [_ | rest], collection), do: scan_events(channel, rest, collection)
 end

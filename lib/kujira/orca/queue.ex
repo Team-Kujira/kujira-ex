@@ -83,6 +83,9 @@ defmodule Kujira.Orca.Queue do
     end
   end
 
+  @doc """
+  Enumerates all bid pools based on contract config
+  """
   @spec populate_pools(__MODULE__.t(), integer(), Decimal.t()) :: __MODULE__.t()
   def populate_pools(queue, max_slot, premium_rate_per_slot) do
     %{
@@ -93,6 +96,10 @@ defmodule Kujira.Orca.Queue do
           |> Enum.map(&Pool.calculate(premium_rate_per_slot, &1))
     }
   end
+
+  @doc """
+  Assigns the current state to the bd_pools from a direct contract query response
+  """
 
   @spec load_pools(list(map()), __MODULE__.t()) :: __MODULE__.t()
   def load_pools(pools, queue) do

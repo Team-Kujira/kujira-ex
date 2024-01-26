@@ -51,6 +51,10 @@ defmodule Kujira.Orca.Liquidation do
           fee_amount: integer()
         }
 
+  @doc """
+  Returns all liquidations found in a specific transaction
+  """
+
   @spec from_tx_response(TxResponse.t()) :: list(__MODULE__.t()) | nil
   def from_tx_response(response) do
     case scan_events(response.events) do

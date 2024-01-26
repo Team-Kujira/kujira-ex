@@ -304,4 +304,32 @@ defmodule KujiraOrcaTest do
              }
            ]
   end
+
+  test "extracts a new bid from a transaction" do
+    {:ok, channel} =
+      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+        interceptors: [{GRPC.Logger.Client, level: :debug}]
+      )
+
+    {:ok, %{tx_response: response}} =
+      Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
+        # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
+        hash: "968B00A8A38B4FE26694B2C5B8AEEB50437E13A916103AFB2DC3A7529B1AA212"
+      })
+
+    bids = Orca.Bid.from_tx_response(channel, response)
+
+    assert bids ==
+             [
+               {"kujira1zkh4y25snp78qt6zauucklw7wuudss2n5vuya7p79uah922uwudqmw6r8a",
+                %Kujira.Orca.Bid{
+                  activation_time: :not_loaded,
+                  bid_amount: 989_344_412,
+                  bidder: "kujira1el4z7lxhq970vdcyhk24lvaus58d5ghazgqmfk",
+                  filled_amount: 0,
+                  id: "158",
+                  premium: Decimal.new("0.030")
+                }}
+             ]
+  end
 end
