@@ -27,17 +27,7 @@ defmodule Kujira.Ghost do
   """
 
   @spec get_market(Channel.t(), String.t()) :: {:ok, Market.t()} | {:error, :not_found}
-  def get_market(channel, address) do
-    Memoize.Cache.get_or_run({__MODULE__, :resolve, [address]}, fn ->
-      with {:ok, config} <- Contract.query_state_smart(channel, address, %{config: %{}}),
-           {:ok, market} <- Market.from_config(address, config) do
-        {:ok, market}
-      else
-        _ ->
-          {:error, :not_found}
-      end
-    end)
-  end
+  def get_market(channel, address), do: Contract.get(channel, {Market, address})
 
   @doc """
   Fetches all Liquidation Markets. This will only change when config changes or new Markets are added.
@@ -80,17 +70,7 @@ defmodule Kujira.Ghost do
   """
 
   @spec get_vault(Channel.t(), String.t()) :: {:ok, Vault.t()} | {:error, :not_found}
-  def get_vault(channel, address) do
-    Memoize.Cache.get_or_run({__MODULE__, :resolve, [address]}, fn ->
-      with {:ok, config} <- Contract.query_state_smart(channel, address, %{config: %{}}),
-           {:ok, vault} <- Vault.from_config(address, config) do
-        {:ok, vault}
-      else
-        _ ->
-          {:error, :not_found}
-      end
-    end)
-  end
+  def get_vault(channel, address), do: Contract.get(channel, {Vault, address})
 
   @doc """
   Fetches all Liquidation Vaults. This will only change when config changes or new Vaults are added.

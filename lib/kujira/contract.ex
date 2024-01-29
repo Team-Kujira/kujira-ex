@@ -49,6 +49,19 @@ defmodule Kujira.Contract do
     end)
   end
 
+  @spec get(Channel.t(), {module(), String.t()}) :: {:ok, struct()} | {:error, :not_found}
+  def get(channel, {module, address}) do
+    Memoize.Cache.get_or_run({__MODULE__, :resolve, [address]}, fn ->
+      with {:ok, config} <- query_state_smart(channel, address, %{config: %{}}),
+           {:ok, struct} <- module.from_config(address, config) do
+        {:ok, struct}
+      else
+        _ ->
+          {:error, :not_found}
+      end
+    end)
+  end
+
   @spec query_state_smart(GRPC.Channel.t(), String.t(), map()) ::
           {:ok, map()} | {:error, GRPC.RPCError.t()}
   def query_state_smart(channel, address, query) do

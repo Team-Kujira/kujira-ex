@@ -20,17 +20,7 @@ defmodule Kujira.Orca do
   """
 
   @spec get_queue(Channel.t(), String.t()) :: {:ok, Queue.t()} | {:error, :not_found}
-  def get_queue(channel, address) do
-    Memoize.Cache.get_or_run({__MODULE__, :resolve, [address]}, fn ->
-      with {:ok, config} <- Contract.query_state_smart(channel, address, %{config: %{}}),
-           {:ok, queue} <- Queue.from_config(address, config) do
-        {:ok, queue}
-      else
-        _ ->
-          {:error, :not_found}
-      end
-    end)
-  end
+  def get_queue(channel, address), do: Contract.get(channel, {Queue, address})
 
   @doc """
   Fetches all Liquidation Queues. This will only change when config changes or new Queues are added.
