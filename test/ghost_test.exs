@@ -75,4 +75,44 @@ defmodule KujiraGhostTest do
     [%Ghost.Vault{} | _] = vaults
     assert Enum.count(vaults) > 10
   end
+
+  test "queries a market" do
+    {:ok, channel} =
+      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+        interceptors: [{GRPC.Logger.Client, level: :debug}]
+      )
+
+    assert Ghost.get_market(
+             channel,
+             #  Mainnet KUJI-USK
+             "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"
+           ) ==
+             {:ok,
+              %Kujira.Ghost.Market{
+                address: "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm",
+                borrow_fee: Decimal.new("0.002"),
+                collateral_oracle_denom: "KUJI",
+                collateral_token: %Kujira.Token{
+                  decimals: 6,
+                  denom: "ukuji"
+                },
+                full_liquidation_threshold: 1_000_000,
+                max_ltv: Decimal.new("0.5"),
+                orca_address: "kujira1098ay2tx2238hwfmntjyfjms9zyqwlcdvmydyhq9d08lt8tj5mlss06myq",
+                owner: "kujira1tsekaqv9vmem0zwskmf90gpf0twl6k57e8vdnq",
+                partial_liquidation_target: Decimal.new("0.4"),
+                vault_address: "kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf"
+              }}
+  end
+
+  test "fetches all markets" do
+    {:ok, channel} =
+      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+        interceptors: [{GRPC.Logger.Client, level: :debug}]
+      )
+
+    {:ok, markets} = Ghost.list_markets(channel)
+    [%Ghost.Market{} | _] = markets
+    assert Enum.count(markets) > 10
+  end
 end
