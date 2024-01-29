@@ -1,7 +1,6 @@
 defmodule Kujira.Ghost.Vault do
   @moduledoc """
-  We define a Market, as far as Orca is concerned, in order to be able to standardise
-  and aggregate the health of the various markets that any given liquidation queue can liquidate
+  A central vault for deposits of a specific deposit_token, which is lent to the Vault's markets, and interest earned on deposits
 
   ## Fields
   * `:address` - The address of the market

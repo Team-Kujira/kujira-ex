@@ -1,7 +1,6 @@
 defmodule Kujira.Ghost.Market do
   @moduledoc """
-  We define a Market, as far as Orca is concerned, in order to be able to standardise
-  and aggregate the health of the various markets that any given liquidation queue can liquidate
+  A Ghoat market taked deposits of collateral_token, and allows borrowing of the vault.deposit_token, up to the maximum LTV as quoted by the oracle denoms
 
   ## Fields
   * `:address` - The address of the market
