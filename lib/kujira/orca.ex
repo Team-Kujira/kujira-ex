@@ -30,30 +30,8 @@ defmodule Kujira.Orca do
   """
 
   @spec list_queues(GRPC.Channel.t(), list(integer())) :: {:ok, list(Queue.t())} | :error
-  def list_queues(channel, code_ids \\ @code_ids) when is_list(code_ids) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :resolve, [code_ids]},
-      fn ->
-        with {:ok, contracts} <- Contract.by_codes(channel, code_ids),
-             {:ok, queues} <-
-               contracts
-               |> Task.async_stream(&get_queue(channel, &1))
-               |> Enum.reduce({:ok, []}, fn
-                 {:ok, {:ok, x}}, {:ok, xs} ->
-                   {:ok, [x | xs]}
-
-                 _, err ->
-                   err
-               end) do
-          {:ok, queues}
-        else
-          _ ->
-            :error
-        end
-      end,
-      expires_in: 24 * 60 * 1000
-    )
-  end
+  def list_queues(channel, code_ids \\ @code_ids) when is_list(code_ids),
+    do: Contract.list(channel, Queue, code_ids)
 
   @doc """
   Loads the current contract state into the Queue; the totals of each bid pool

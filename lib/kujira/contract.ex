@@ -62,6 +62,32 @@ defmodule Kujira.Contract do
     end)
   end
 
+  @spec list(GRPC.Channel.t(), module(), list(integer())) :: {:ok, list(struct())} | :error
+  def list(channel, module, code_ids) when is_list(code_ids) do
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :resolve, [code_ids]},
+      fn ->
+        with {:ok, contracts} <- by_codes(channel, code_ids),
+             {:ok, struct} <-
+               contracts
+               |> Task.async_stream(&get(channel, {module, &1}))
+               |> Enum.reduce({:ok, []}, fn
+                 {:ok, {:ok, x}}, {:ok, xs} ->
+                   {:ok, [x | xs]}
+
+                 _, err ->
+                   err
+               end) do
+          {:ok, struct}
+        else
+          _ ->
+            :error
+        end
+      end,
+      expires_in: 24 * 60 * 1000
+    )
+  end
+
   @spec query_state_smart(GRPC.Channel.t(), String.t(), map()) ::
           {:ok, map()} | {:error, GRPC.RPCError.t()}
   def query_state_smart(channel, address, query) do

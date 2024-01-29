@@ -37,30 +37,8 @@ defmodule Kujira.Ghost do
   """
 
   @spec list_markets(GRPC.Channel.t(), list(integer())) :: {:ok, list(Market.t())} | :error
-  def list_markets(channel, code_ids \\ @market_code_ids) when is_list(code_ids) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :resolve, [code_ids]},
-      fn ->
-        with {:ok, contracts} <- Contract.by_codes(channel, code_ids),
-             {:ok, markets} <-
-               contracts
-               |> Task.async_stream(&get_market(channel, &1))
-               |> Enum.reduce({:ok, []}, fn
-                 {:ok, {:ok, x}}, {:ok, xs} ->
-                   {:ok, [x | xs]}
-
-                 _, err ->
-                   err
-               end) do
-          {:ok, markets}
-        else
-          _ ->
-            :error
-        end
-      end,
-      expires_in: 24 * 60 * 1000
-    )
-  end
+  def list_markets(channel, code_ids \\ @market_code_ids) when is_list(code_ids),
+    do: Contract.list(channel, Market, code_ids)
 
   @doc """
   Fetches the Vault contract and its current config from the chain.
@@ -80,28 +58,6 @@ defmodule Kujira.Ghost do
   """
 
   @spec list_vaults(GRPC.Channel.t(), list(integer())) :: {:ok, list(Vault.t())} | :error
-  def list_vaults(channel, code_ids \\ @vault_code_ids) when is_list(code_ids) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :resolve, [code_ids]},
-      fn ->
-        with {:ok, contracts} <- Contract.by_codes(channel, code_ids),
-             {:ok, vaults} <-
-               contracts
-               |> Task.async_stream(&get_vault(channel, &1))
-               |> Enum.reduce({:ok, []}, fn
-                 {:ok, {:ok, x}}, {:ok, xs} ->
-                   {:ok, [x | xs]}
-
-                 _, err ->
-                   err
-               end) do
-          {:ok, vaults}
-        else
-          _ ->
-            :error
-        end
-      end,
-      expires_in: 24 * 60 * 1000
-    )
-  end
+  def list_vaults(channel, code_ids \\ @vault_code_ids) when is_list(code_ids),
+    do: Contract.list(channel, Vault, code_ids)
 end
