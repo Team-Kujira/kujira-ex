@@ -57,14 +57,17 @@ defmodule Kujira.Ghost do
   end
 
   @doc """
-  Loads the Market into a format that Orca can consume for health reporting
+  Loads the Market into a format that Orca can consume for health reporting.
+  It's Memoized due to the call to `Contract.query_state_all`, clearing every 10m.
+
+  Manually clear with `Memoize.invalidate(Kujira.Contract, :query_state_all, [market.address])`
   """
   @spec load_orca_market(Channel.t(), Market.t(), integer() | nil) ::
           {:ok, Kujira.Orca.Market.t()} | :error
   def load_orca_market(channel, market, precision \\ 3) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
 
-    with {:ok, models} <- Contract.query_state_all(channel, market.address),
+    with {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000),
          {:ok, vault} <- Contract.get(channel, market.vault),
          {:ok, vault} <- load_vault(channel, vault) do
       health =

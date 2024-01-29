@@ -71,7 +71,7 @@ defmodule Kujira.Contract do
             :error
         end
       end,
-      expires_in: 24 * 60 * 1000
+      expires_in: 24 * 60 * 60 * 1000
     )
   end
 
@@ -92,19 +92,28 @@ defmodule Kujira.Contract do
   end
 
   @doc """
-  Queries the full, raw contract state at an address. It's highly recommended to memoize any calls to this function,
-  and invalidate them in response to external events e.g. a matching tx in a node websocket subscription
+  Queries the full, raw contract state at an address. Default 1h cache
   """
-  @spec query_state_all(GRPC.Channel.t(), String.t(), any() | nil) ::
+  @spec query_state_all(GRPC.Channel.t(), String.t(), integer() | nil) ::
           {:ok, map()} | {:error, GRPC.RPCError.t()}
-  def query_state_all(channel, address, page \\ nil) do
+  def query_state_all(channel, address, expires_in \\ 60 * 60 * 1000) do
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :resolve, [address]},
+      fn ->
+        query_state_all_page(channel, address, nil)
+      end,
+      expires_in: expires_in
+    )
+  end
+
+  defp query_state_all_page(channel, address, page) do
     with {:ok, %{models: models, pagination: %{next_key: next_key}}} when next_key != "" <-
            Stub.all_contract_state(
              channel,
              QueryAllContractStateRequest.new(address: address, pagination: page)
            ),
          {:ok, next} <-
-           query_state_all(
+           query_state_all_page(
              channel,
              address,
              PageRequest.new(key: next_key)
