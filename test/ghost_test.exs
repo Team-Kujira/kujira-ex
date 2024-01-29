@@ -34,7 +34,8 @@ defmodule KujiraGhostTest do
                   decimals: 6,
                   denom:
                     "factory/kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf/urcpt"
-                }
+                },
+                status: :not_loaded
               }}
 
     assert Ghost.get_vault(
@@ -61,7 +62,8 @@ defmodule KujiraGhostTest do
                   decimals: 6,
                   denom:
                     "factory/kujira143fwcudwy0exd6zd3xyvqt2kae68ud6n8jqchufu7wdg5sryd4lqtlvvep/urcpt"
-                }
+                },
+                status: :not_loaded
               }}
   end
 
@@ -146,9 +148,10 @@ defmodule KujiraGhostTest do
         "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"
       )
 
-    {:ok, market} =
-      Ghost.load_orca_market(channel, market)
-      |> IO.inspect()
+    {:ok, %Kujira.Orca.Market{} = market} = Ghost.load_orca_market(channel, market)
+
+    [{%Decimal{}, val} | rest] = Map.to_list(market.health)
+    assert val > 0
   end
 
   test "fetches all markets" do
