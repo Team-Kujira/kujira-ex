@@ -105,8 +105,32 @@ defmodule KujiraGhostTest do
                 partial_liquidation_target: Decimal.new("0.4"),
                 vault:
                   {Ghost.Vault,
-                   "kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf"}
+                   "kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf"},
+                status: :not_loaded
               }}
+  end
+
+  test "loads a market status" do
+    {:ok, channel} =
+      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+        interceptors: [{GRPC.Logger.Client, level: :debug}]
+      )
+
+    {:ok, market} =
+      Ghost.get_market(
+        channel,
+        #  Mainnet KUJI-USK
+        "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"
+      )
+
+    {:ok, market} = Ghost.load_market(channel, market)
+
+    assert %Kujira.Ghost.Market{
+             status: %Ghost.Market.Status{}
+           } = market
+
+    assert market.status.deposited > 0
+    assert market.status.borrowed > 0
   end
 
   test "fetches all markets" do

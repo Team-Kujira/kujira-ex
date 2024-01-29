@@ -24,6 +24,40 @@ defmodule Kujira.Ghost.Market do
   * `:borrow_fee` - The amount of the borrowed asset retained as a fee when borrow amount is increased
   """
 
+  defmodule Status do
+    @moduledoc """
+    The current deposit and borrow totals
+
+    ## Fields
+    * `:deposited` - The amount of collateral_token deposited
+
+    * `:borrowed` - The amount of the Vault deposit_token borrowed
+
+
+    """
+
+    defstruct deposited: 0,
+              borrowed: 0
+
+    @type t :: %__MODULE__{
+            deposited: integer(),
+            borrowed: integer()
+          }
+
+    def from_response(%{
+          "deposited" => deposited,
+          "borrowed" => borrowed
+        }) do
+      with {deposited, ""} <- Integer.parse(deposited),
+           {borrowed, ""} <- Integer.parse(borrowed) do
+        {:ok, %__MODULE__{deposited: deposited, borrowed: borrowed}}
+      else
+        _ ->
+          :error
+      end
+    end
+  end
+
   alias Kujira.Token
   alias Kujira.Ghost.Vault
   alias Kujira.Orca.Queue
@@ -38,7 +72,8 @@ defmodule Kujira.Ghost.Market do
     :max_ltv,
     :full_liquidation_threshold,
     :partial_liquidation_target,
-    :borrow_fee
+    :borrow_fee,
+    :status
   ]
 
   @type t :: %__MODULE__{
@@ -51,7 +86,8 @@ defmodule Kujira.Ghost.Market do
           max_ltv: Decimal.t(),
           full_liquidation_threshold: integer(),
           partial_liquidation_target: Decimal.t(),
-          borrow_fee: Decimal.t()
+          borrow_fee: Decimal.t(),
+          status: :not_loaded | Status.t()
         }
 
   @spec from_config(String.t(), map()) :: {:ok, __MODULE__.t()} | :error
@@ -81,7 +117,8 @@ defmodule Kujira.Ghost.Market do
          max_ltv: max_ltv,
          full_liquidation_threshold: full_liquidation_threshold,
          partial_liquidation_target: partial_liquidation_target,
-         borrow_fee: borrow_fee
+         borrow_fee: borrow_fee,
+         status: :not_loaded
        }}
     else
       _ ->

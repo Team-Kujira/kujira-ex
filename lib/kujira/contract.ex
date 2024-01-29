@@ -6,12 +6,6 @@ defmodule Kujira.Contract do
   @doc """
   Queries the full, raw contract state at an address. It's highly recommended to memoize any calls to this function,
   and invalidate them in response to external events e.g. a matching tx in a node websocket subscription
-
-  ## Examples
-
-      iex> Kujira.hello()
-      :world
-
   """
 
   alias Cosmwasm.Wasm.V1.Query.Stub

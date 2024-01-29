@@ -41,6 +41,22 @@ defmodule Kujira.Ghost do
     do: Contract.list(channel, Market, code_ids)
 
   @doc """
+  Loads the current Status into the Market
+  """
+
+  @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | :error
+  def load_market(channel, market) do
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, market.address, %{status: %{}}),
+         {:ok, status} <- Market.Status.from_response(res) do
+      {:ok, %{market | status: status}}
+    else
+      _ ->
+        :error
+    end
+  end
+
+  @doc """
   Fetches the Vault contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
