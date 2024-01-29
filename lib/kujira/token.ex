@@ -1,4 +1,8 @@
 defmodule Kujira.Token do
+  @moduledoc """
+  Metadata for tokens on the Kujira Blockchain
+  """
+
   defstruct [:denom, :decimals]
   @type t :: %__MODULE__{denom: String.t(), decimals: integer()}
 
