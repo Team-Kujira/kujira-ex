@@ -60,13 +60,47 @@ defmodule Kujira.Ghost do
   Loads the Market into a format that Orca can consume for health reporting
   """
   @spec load_orca_market(Channel.t(), Market.t()) :: {:ok, Kujira.Orca.Market.t()} | :error
-  def load_orca_market(channel, market) do
+  def load_orca_market(channel, market, precision \\ 2) do
     with {:ok, models} <- Contract.query_state_all(channel, market.address),
          {:ok, vault} <- Contract.get(channel, market.vault),
          {:ok, vault} <- load_vault(channel, vault) do
-      {:ok, IO.inspect(vault)}
+      models
+      |> Map.values()
+      |> Enum.reduce(
+        %{},
+        fn model, agg ->
+          with %{
+                 #  "holder" => holder,
+                 "collateral_amount" => collateral_amount,
+                 "debt_shares" => debt_shares
+               } <- model,
+               {debt_shares, ""} <- Integer.parse(debt_shares),
+               {collateral_amount, ""} when collateral_amount > 0 <-
+                 Integer.parse(collateral_amount) do
+            liquidation_price =
+              debt_shares
+              |> Decimal.new()
+              |> Decimal.mult(vault.status.debt_ratio)
+              |> Decimal.div(collateral_amount |> Decimal.new() |> Decimal.mult(market.max_ltv))
+              |> IO.inspect()
+
+            Map.update(agg, liquidation_price, collateral_amount, &(&1 + collateral_amount))
+
+            # Truncate to precision, then add to the next one up (health buckets are "x amount at or below price)
+            # bucket = liquidation_price |> Decimal.
+          else
+            _ -> agg
+          end
+        end
+      )
     end
   end
+
+  defp load_vault_oracle_price(channel, %Vault{oracle_denom: {:live, denom}}),
+    do: Kujira.Oracle.load_price(channel, denom)
+
+  defp load_vault_oracle_price(_, %Vault{oracle_denom: {:static, value}}),
+    do: {:ok, value}
 
   @doc """
   Fetches the Vault contract and its current config from the chain.

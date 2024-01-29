@@ -146,7 +146,9 @@ defmodule KujiraGhostTest do
         "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"
       )
 
-    {:ok, market} = Ghost.load_orca_market(channel, market)
+    {:ok, market} =
+      Ghost.load_orca_market(channel, market)
+      |> IO.inspect()
   end
 
   test "fetches all markets" do
