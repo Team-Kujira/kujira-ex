@@ -59,7 +59,8 @@ defmodule Kujira.Ghost do
   @doc """
   Loads the Market into a format that Orca can consume for health reporting
   """
-  @spec load_orca_market(Channel.t(), Market.t()) :: {:ok, Kujira.Orca.Market.t()} | :error
+  @spec load_orca_market(Channel.t(), Market.t(), integer() | nil) ::
+          {:ok, Kujira.Orca.Market.t()} | :error
   def load_orca_market(channel, market, precision \\ 3) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
 
