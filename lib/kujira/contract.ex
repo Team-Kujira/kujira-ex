@@ -2,19 +2,12 @@ defmodule Kujira.Contract do
   @moduledoc """
   Convenience methods for querying CosmWasm smart contracts on Kujira
   """
-
-  @doc """
-  Queries the full, raw contract state at an address. It's highly recommended to memoize any calls to this function,
-  and invalidate them in response to external events e.g. a matching tx in a node websocket subscription
-  """
-
+  alias Cosmos.Base.Query.V1beta1.PageRequest
   alias Cosmwasm.Wasm.V1.Query.Stub
+  alias Cosmwasm.Wasm.V1.QueryAllContractStateRequest
   alias Cosmwasm.Wasm.V1.QuerySmartContractStateRequest
   alias Cosmwasm.Wasm.V1.QueryContractsByCodeRequest
-
-  def query_state_all do
-    :world
-  end
+  alias Cosmwasm.Wasm.V1.Model
 
   @spec by_code(GRPC.Channel.t(), integer()) ::
           {:ok, list(String.t())} | {:error, GRPC.RPCError.t()}
@@ -96,5 +89,39 @@ defmodule Kujira.Contract do
          {:ok, res} <- Jason.decode(data) do
       {:ok, res}
     end
+  end
+
+  @doc """
+  Queries the full, raw contract state at an address. It's highly recommended to memoize any calls to this function,
+  and invalidate them in response to external events e.g. a matching tx in a node websocket subscription
+  """
+  @spec query_state_all(GRPC.Channel.t(), String.t(), any() | nil) ::
+          {:ok, map()} | {:error, GRPC.RPCError.t()}
+  def query_state_all(channel, address, page \\ nil) do
+    with {:ok, %{models: models, pagination: %{next_key: next_key}}} when next_key != "" <-
+           Stub.all_contract_state(
+             channel,
+             QueryAllContractStateRequest.new(address: address, pagination: page)
+           ),
+         {:ok, next} <-
+           query_state_all(
+             channel,
+             address,
+             PageRequest.new(key: next_key)
+           ) do
+      {:ok, decode_models(models, next)}
+    else
+      {:ok, %{models: models, pagination: %{next_key: nil}}} ->
+        {:ok, decode_models(models)}
+
+      err ->
+        err
+    end
+  end
+
+  defp decode_models(models, init \\ %{}) do
+    Enum.reduce(models, init, fn %Model{} = model, agg ->
+      Map.put(agg, model.key, Jason.decode!(model.value))
+    end)
   end
 end

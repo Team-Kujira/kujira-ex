@@ -57,6 +57,18 @@ defmodule Kujira.Ghost do
   end
 
   @doc """
+  Loads the Market into a format that Orca can consume for health reporting
+  """
+  @spec load_orca_market(Channel.t(), Market.t()) :: {:ok, Kujira.Orca.Market.t()} | :error
+  def load_orca_market(channel, market) do
+    with {:ok, models} <- Contract.query_state_all(channel, market.address),
+         {:ok, vault} <- Contract.get(channel, market.vault),
+         {:ok, vault} <- load_vault(channel, vault) do
+      {:ok, IO.inspect(vault)}
+    end
+  end
+
+  @doc """
   Fetches the Vault contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
@@ -65,6 +77,22 @@ defmodule Kujira.Ghost do
 
   @spec get_vault(Channel.t(), String.t()) :: {:ok, Vault.t()} | {:error, :not_found}
   def get_vault(channel, address), do: Contract.get(channel, {Vault, address})
+
+  @doc """
+  Loads the current Status into the Vault
+  """
+
+  @spec load_vault(Channel.t(), Vault.t()) :: {:ok, Vault.t()} | :error
+  def load_vault(channel, vault) do
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, vault.address, %{status: %{}}),
+         {:ok, status} <- Vault.Status.from_response(res) do
+      {:ok, %{vault | status: status}}
+    else
+      _ ->
+        :error
+    end
+  end
 
   @doc """
   Fetches all Liquidation Vaults. This will only change when config changes or new Vaults are added.

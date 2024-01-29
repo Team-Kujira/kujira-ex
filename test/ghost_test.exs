@@ -133,6 +133,22 @@ defmodule KujiraGhostTest do
     assert market.status.borrowed > 0
   end
 
+  test "loads a market health" do
+    {:ok, channel} =
+      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+        interceptors: [{GRPC.Logger.Client, level: :debug}]
+      )
+
+    {:ok, market} =
+      Ghost.get_market(
+        channel,
+        #  Mainnet KUJI-USK
+        "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"
+      )
+
+    {:ok, market} = Ghost.load_orca_market(channel, market)
+  end
+
   test "fetches all markets" do
     {:ok, channel} =
       GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
