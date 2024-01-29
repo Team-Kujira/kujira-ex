@@ -26,12 +26,14 @@ defmodule Kujira.Ghost.Market do
   """
 
   alias Kujira.Token
+  alias Kujira.Ghost.Vault
+  alias Kujira.Orca.Queue
 
   defstruct [
     :address,
     :owner,
-    :vault_address,
-    :orca_address,
+    :vault,
+    :orca_queue,
     :collateral_token,
     :collateral_oracle_denom,
     :max_ltv,
@@ -43,8 +45,8 @@ defmodule Kujira.Ghost.Market do
   @type t :: %__MODULE__{
           address: String.t(),
           owner: String.t(),
-          vault_address: String.t(),
-          orca_address: String.t(),
+          vault: {Vault, String.t()},
+          orca_queue: {Queue, String.t()},
           collateral_token: Token.t(),
           collateral_oracle_denom: String.t(),
           max_ltv: Decimal.t(),
@@ -73,8 +75,8 @@ defmodule Kujira.Ghost.Market do
        %__MODULE__{
          address: address,
          owner: owner,
-         vault_address: vault_addr,
-         orca_address: orca_addr,
+         vault: {Vault, vault_addr},
+         orca_queue: {Queue, orca_addr},
          collateral_token: Token.from_denom(collateral_denom),
          collateral_oracle_denom: collateral_oracle_denom,
          max_ltv: max_ltv,

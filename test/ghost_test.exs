@@ -98,10 +98,14 @@ defmodule KujiraGhostTest do
                 },
                 full_liquidation_threshold: 1_000_000,
                 max_ltv: Decimal.new("0.5"),
-                orca_address: "kujira1098ay2tx2238hwfmntjyfjms9zyqwlcdvmydyhq9d08lt8tj5mlss06myq",
+                orca_queue:
+                  {Kujira.Orca.Queue,
+                   "kujira1098ay2tx2238hwfmntjyfjms9zyqwlcdvmydyhq9d08lt8tj5mlss06myq"},
                 owner: "kujira1tsekaqv9vmem0zwskmf90gpf0twl6k57e8vdnq",
                 partial_liquidation_target: Decimal.new("0.4"),
-                vault_address: "kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf"
+                vault:
+                  {Ghost.Vault,
+                   "kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf"}
               }}
   end
 
