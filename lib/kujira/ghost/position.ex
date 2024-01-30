@@ -28,9 +28,9 @@ defmodule Kujira.Ghost.Position do
           debt_amount: integer()
         }
 
-  @spec from_response(Kujira.Ghost.Market.t(), Kujira.Ghost.Vault.t(), map()) ::
+  @spec from_query(Kujira.Ghost.Market.t(), Kujira.Ghost.Vault.t(), map()) ::
           :error | __MODULE__.t()
-  def from_response(
+  def from_query(
         %Market{address: market},
         %Vault{status: %Vault.Status{debt_ratio: debt_ratio}},
         %{

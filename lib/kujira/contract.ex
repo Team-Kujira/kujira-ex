@@ -3,10 +3,8 @@ defmodule Kujira.Contract do
   Convenience methods for querying CosmWasm smart contracts on Kujira
   """
   alias Cosmos.Base.Query.V1beta1.PageRequest
-  alias Cosmos.Base.Query.V1beta1.PageResponse
   alias Cosmwasm.Wasm.V1.Query.Stub
   alias Cosmwasm.Wasm.V1.QueryAllContractStateRequest
-  alias Cosmwasm.Wasm.V1.QueryAllContractStateResponse
   alias Cosmwasm.Wasm.V1.QuerySmartContractStateRequest
   alias Cosmwasm.Wasm.V1.QueryContractsByCodeRequest
   alias Cosmwasm.Wasm.V1.Model
@@ -40,7 +38,7 @@ defmodule Kujira.Contract do
 
   @spec get(Channel.t(), {module(), String.t()}) :: {:ok, struct()} | {:error, :not_found}
   def get(channel, {module, address}) do
-    Memoize.Cache.get_or_run({__MODULE__, :resolve, [address]}, fn ->
+    Memoize.Cache.get_or_run({__MODULE__, :get, [address]}, fn ->
       with {:ok, config} <- query_state_smart(channel, address, %{config: %{}}),
            {:ok, struct} <- module.from_config(address, config) do
         {:ok, struct}
@@ -54,7 +52,7 @@ defmodule Kujira.Contract do
   @spec list(GRPC.Channel.t(), module(), list(integer())) :: {:ok, list(struct())} | :error
   def list(channel, module, code_ids) when is_list(code_ids) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :resolve, [code_ids]},
+      {__MODULE__, :list, [code_ids]},
       fn ->
         with {:ok, contracts} <- by_codes(channel, code_ids),
              {:ok, struct} <-
@@ -100,7 +98,7 @@ defmodule Kujira.Contract do
           {:ok, map()} | {:error, GRPC.RPCError.t()}
   def query_state_all(channel, address, expires_in \\ 60 * 60 * 1000) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :resolve, [address]},
+      {__MODULE__, :query_state_all, [address]},
       fn ->
         query_state_all_page(channel, address, nil)
       end,
@@ -133,7 +131,7 @@ defmodule Kujira.Contract do
   @doc """
   Streams the current contract state
   """
-  def stream_state_all(channel, address, expires_in \\ 60 * 60 * 1000) do
+  def stream_state_all(channel, address) do
     Stream.resource(
       fn ->
         Stub.all_contract_state(

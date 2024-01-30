@@ -44,7 +44,8 @@ defmodule Kujira.Ghost.Market do
             borrowed: integer()
           }
 
-    def from_response(%{
+    @spec from_query(map()) :: :error | {:ok, __MODULE__.t()}
+    def from_query(%{
           "deposited" => deposited,
           "borrowed" => borrowed
         }) do

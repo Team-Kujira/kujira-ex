@@ -48,7 +48,8 @@ defmodule Kujira.Ghost.Vault do
             debt_ratio: Decimal.t()
           }
 
-    def from_response(%{
+    @spec from_query(map()) :: :error | {:ok, __MODULE__.t()}
+    def from_query(%{
           "deposited" => deposited,
           "borrowed" => borrowed,
           "rate" => rate,

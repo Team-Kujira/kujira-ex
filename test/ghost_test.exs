@@ -149,7 +149,6 @@ defmodule KujiraGhostTest do
       )
 
     {:ok, %Kujira.Orca.Market{} = market} = Ghost.load_orca_market(channel, market)
-
     [{%Decimal{}, val} | _] = Map.to_list(market.health)
     assert val > 0
   end

@@ -49,7 +49,7 @@ defmodule Kujira.Ghost do
   def load_market(channel, market) do
     with {:ok, res} <-
            Contract.query_state_smart(channel, market.address, %{status: %{}}),
-         {:ok, status} <- Market.Status.from_response(res) do
+         {:ok, status} <- Market.Status.from_query(res) do
       {:ok, %{market | status: status}}
     else
       _ ->
@@ -127,7 +127,7 @@ defmodule Kujira.Ghost do
   def load_vault(channel, vault) do
     with {:ok, res} <-
            Contract.query_state_smart(channel, vault.address, %{status: %{}}),
-         {:ok, status} <- Vault.Status.from_response(res) do
+         {:ok, status} <- Vault.Status.from_query(res) do
       {:ok, %{vault | status: status}}
     else
       _ ->
@@ -155,7 +155,7 @@ defmodule Kujira.Ghost do
     Contract.stream_state_all(channel, market.address)
     |> Stream.map(fn
       %{"collateral_amount" => _, "debt_shares" => _, "holder" => _} = position ->
-        Position.from_response(market, vault, position)
+        Position.from_query(market, vault, position)
 
       _ ->
         nil
