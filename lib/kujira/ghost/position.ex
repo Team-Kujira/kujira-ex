@@ -30,6 +30,9 @@ defmodule Kujira.Ghost.Position do
           debt_amount: integer()
         }
 
+  @typedoc """
+  The direction of the adjustment to the Position: collateral deposit, collateral withdrawal, debt borrow, debt repay
+  """
   @type adjustment :: :deposit | :withdrawal | :borrow | :repay
 
   @spec from_query(Kujira.Ghost.Market.t(), Kujira.Ghost.Vault.t(), map()) ::

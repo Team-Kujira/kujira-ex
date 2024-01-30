@@ -201,12 +201,9 @@ defmodule KujiraGhostTest do
                 "kujira13tdp9dluewvh4hyq2r3ytmkxkfd9qcfu0xwaue", :deposit}
              ]
 
-    #  Repay + Withdraw
-    {:ok, %{tx_response: response}} =
-      Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
-        # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
-        hash: "7B73E4CEF376DB6D1E1D8E81B4656194722738044675898B02D130B1CFE61008"
-      })
+    #  Repay +
+    %{tx_response: response} =
+      load_tx("7B73E4CEF376DB6D1E1D8E81B4656194722738044675898B02D130B1CFE61008")
 
     changes = Ghost.Position.from_tx_response(response)
 
@@ -219,5 +216,51 @@ defmodule KujiraGhostTest do
                  "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"},
                 "kujira1xhnls8dtd88356g0lgg38kn6r2xgpr85ecwkgu", :repay}
              ]
+  end
+
+  test "extracts vault status change events from a transaction", %{channel: channel} do
+    # user withdraw
+    %{tx_response: response} =
+      load_tx("DA0185467777977D4E326F1EAC9AD03C46C93240C21013E4A91812BCD5BBE4D6")
+
+    changes = Ghost.Vault.Status.from_tx_response(response)
+
+    assert changes == [
+             {{Ghost.Vault, "kujira1jelmu9tdmr6hqg0d6qw4g6c9mwrexrzuryh50fwcavcpthp5m0uq20853h"},
+              :withdraw, 3_856_957_822}
+           ]
+
+    # user deposit
+    %{tx_response: response} =
+      load_tx("CEF02EC035FCC7A11F8F09A0584D1DE6BE49752276BE1FF4C8DF2167980FE6A7")
+
+    changes = Ghost.Vault.Status.from_tx_response(response)
+
+    assert changes == [
+             {{Ghost.Vault, "kujira1jelmu9tdmr6hqg0d6qw4g6c9mwrexrzuryh50fwcavcpthp5m0uq20853h"},
+              :deposit, 1_189_651_933}
+           ]
+
+    # market borrow
+    %{tx_response: response} =
+      load_tx("DB891408ED72A26F67C87FCFD98ED585ED28CF2A10098FB2FEE1FC3F3E70E761")
+
+    changes = Ghost.Vault.Status.from_tx_response(response)
+
+    assert changes == [
+             {{Ghost.Vault, "kujira1jelmu9tdmr6hqg0d6qw4g6c9mwrexrzuryh50fwcavcpthp5m0uq20853h"},
+              :borrow, 1_600_000_000}
+           ]
+
+    # market repay
+    %{tx_response: response} =
+      load_tx("7B73E4CEF376DB6D1E1D8E81B4656194722738044675898B02D130B1CFE61008")
+
+    changes = Ghost.Vault.Status.from_tx_response(response)
+
+    assert changes == [
+             {{Ghost.Vault, "kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf"},
+              :repay, 575_854_079}
+           ]
   end
 end

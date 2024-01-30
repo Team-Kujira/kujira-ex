@@ -34,6 +34,10 @@ defmodule Kujira.Ghost.Vault do
     * `:debt_ratio` - The ratiop between the debt_token and the amount of deposit_token owed by the borrowing Market
     """
 
+    alias Tendermint.Abci.Event
+    alias Tendermint.Abci.EventAttribute
+    alias Kujira.Ghost.Vault
+
     defstruct deposited: 0,
               borrowed: 0,
               rate: Decimal.new(0),
@@ -47,6 +51,11 @@ defmodule Kujira.Ghost.Vault do
             deposit_ratio: Decimal.t(),
             debt_ratio: Decimal.t()
           }
+
+    @typedoc """
+    The direction of the adjustment to the Vault Status: user deposit, user withdrawal, market borrow, market repay
+    """
+    @type adjustment :: :deposit | :withdrawal | :borrow | :repay
 
     @spec from_query(map()) :: :error | {:ok, __MODULE__.t()}
     def from_query(%{
@@ -74,6 +83,110 @@ defmodule Kujira.Ghost.Vault do
           :error
       end
     end
+
+    @doc """
+    Returns all adjustments to the Vault.Status contained in a tx_response
+    """
+    @spec from_tx_response(TxResponse.t()) ::
+            list({{Vault, String.t()}, adjustment, integer()}) | nil
+    def from_tx_response(response) do
+      case scan_events(response.events) do
+        [] ->
+          nil
+
+        xs ->
+          xs
+      end
+    end
+
+    defp scan_events(events, collection \\ [])
+    defp scan_events([], collection), do: collection
+
+    defp scan_events(
+           [
+             %Event{
+               type: "wasm-ghost/deposit",
+               attributes: [
+                 %EventAttribute{key: "_contract_address", value: vault_address},
+                 %EventAttribute{key: "denom", value: _},
+                 %EventAttribute{key: "amount", value: amount}
+               ]
+             }
+             | rest
+           ],
+           collection
+         ) do
+      scan_events(rest, [
+        {{Vault, vault_address}, :deposit, String.to_integer(amount)}
+        | collection
+      ])
+    end
+
+    defp scan_events(
+           [
+             %Event{
+               type: "wasm-ghost/withdraw",
+               attributes: [
+                 %EventAttribute{key: "_contract_address", value: vault_address},
+                 %EventAttribute{key: "destination", value: _},
+                 %EventAttribute{key: "depositor", value: _},
+                 %EventAttribute{key: "denom", value: _},
+                 %EventAttribute{key: "amount", value: amount}
+               ]
+             }
+             | rest
+           ],
+           collection
+         ) do
+      scan_events(rest, [
+        {{Vault, vault_address}, :withdraw, String.to_integer(amount)}
+        | collection
+      ])
+    end
+
+    defp scan_events(
+           [
+             %Event{
+               type: "wasm-ghost/borrow",
+               attributes: [
+                 %EventAttribute{key: "_contract_address", value: vault_address},
+                 %EventAttribute{key: "amount", value: amount},
+                 %EventAttribute{key: "borrower", value: _},
+                 %EventAttribute{key: "denom", value: _}
+               ]
+             }
+             | rest
+           ],
+           collection
+         ) do
+      scan_events(rest, [
+        {{Vault, vault_address}, :borrow, String.to_integer(amount)}
+        | collection
+      ])
+    end
+
+    defp scan_events(
+           [
+             %Event{
+               type: "wasm-ghost/repay",
+               attributes: [
+                 %EventAttribute{key: "_contract_address", value: vault_address},
+                 %EventAttribute{key: "amount", value: amount},
+                 %EventAttribute{key: "borrower", value: _},
+                 %EventAttribute{key: "denom", value: _}
+               ]
+             }
+             | rest
+           ],
+           collection
+         ) do
+      scan_events(rest, [
+        {{Vault, vault_address}, :repay, String.to_integer(amount)}
+        | collection
+      ])
+    end
+
+    defp scan_events([_ | rest], collection), do: scan_events(rest, collection)
   end
 
   alias Kujira.Token
