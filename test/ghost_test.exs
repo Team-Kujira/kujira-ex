@@ -169,4 +169,44 @@ defmodule KujiraGhostTest do
                false
            end)
   end
+
+  test "extracts position change events from a transaction", %{channel: channel} do
+    # Deposit + Borrow
+    {:ok, %{tx_response: response}} =
+      Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
+        # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
+        hash: "F8BF63756503756325AFBB481D70DD0200FDD55F7603CDEB4C07FD9BE4F49219"
+      })
+
+    changes = Ghost.Position.from_tx_response(response)
+
+    assert changes ==
+             [
+               {{Ghost.Market,
+                 "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"},
+                "kujira13tdp9dluewvh4hyq2r3ytmkxkfd9qcfu0xwaue", :borrow},
+               {{Ghost.Market,
+                 "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"},
+                "kujira13tdp9dluewvh4hyq2r3ytmkxkfd9qcfu0xwaue", :deposit}
+             ]
+
+    #  Repay + Withdraw
+    {:ok, %{tx_response: response}} =
+      Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
+        # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
+        hash: "7B73E4CEF376DB6D1E1D8E81B4656194722738044675898B02D130B1CFE61008"
+      })
+
+    changes = Ghost.Position.from_tx_response(response)
+
+    assert changes ==
+             [
+               {{Kujira.Ghost.Market,
+                 "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"},
+                "kujira1xhnls8dtd88356g0lgg38kn6r2xgpr85ecwkgu", :withdraw},
+               {{Kujira.Ghost.Market,
+                 "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"},
+                "kujira1xhnls8dtd88356g0lgg38kn6r2xgpr85ecwkgu", :repay}
+             ]
+  end
 end

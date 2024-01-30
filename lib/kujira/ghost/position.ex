@@ -17,6 +17,8 @@ defmodule Kujira.Ghost.Position do
 
   alias Kujira.Ghost.Market
   alias Kujira.Ghost.Vault
+  alias Tendermint.Abci.Event
+  alias Tendermint.Abci.EventAttribute
 
   defstruct [:market, :holder, :collateral_amount, :debt_shares, :debt_amount]
 
@@ -27,6 +29,8 @@ defmodule Kujira.Ghost.Position do
           debt_shares: integer(),
           debt_amount: integer()
         }
+
+  @type adjustment :: :deposit | :withdrawal | :borrow | :repay
 
   @spec from_query(Kujira.Ghost.Market.t(), Kujira.Ghost.Vault.t(), map()) ::
           :error | __MODULE__.t()
@@ -59,4 +63,109 @@ defmodule Kujira.Ghost.Position do
         :error
     end
   end
+
+  @doc """
+  Returns all adjustments to positions found in the tx response
+  """
+  @spec from_tx_response(TxResponse.t()) ::
+          list({{Market, String.t()}, String.t(), adjustment}) | nil
+  def from_tx_response(response) do
+    case scan_events(response.events) do
+      [] ->
+        nil
+
+      xs ->
+        xs
+    end
+  end
+
+  defp scan_events(events, collection \\ [])
+  defp scan_events([], collection), do: collection
+
+  defp scan_events(
+         [
+           %Event{
+             type: "wasm-ghost/deposit",
+             attributes: [
+               %EventAttribute{key: "_contract_address", value: market_address},
+               %EventAttribute{key: "depositor", value: borrower},
+               %EventAttribute{key: "collateral_added", value: _},
+               %EventAttribute{key: "position_total", value: _}
+             ]
+           }
+           | rest
+         ],
+         collection
+       ) do
+    scan_events(rest, [
+      {{Market, market_address}, borrower, :deposit}
+      | collection
+    ])
+  end
+
+  defp scan_events(
+         [
+           %Event{
+             type: "wasm-ghost/withdraw",
+             attributes: [
+               %EventAttribute{key: "_contract_address", value: market_address},
+               %EventAttribute{key: "destination", value: _},
+               %EventAttribute{key: "depositor", value: borrower},
+               %EventAttribute{key: "amount", value: _},
+               %EventAttribute{key: "position_total", value: _}
+             ]
+           }
+           | rest
+         ],
+         collection
+       ) do
+    scan_events(rest, [
+      {{Market, market_address}, borrower, :withdraw}
+      | collection
+    ])
+  end
+
+  defp scan_events(
+         [
+           %Event{
+             type: "wasm-ghost/borrow",
+             attributes: [
+               %EventAttribute{key: "_contract_address", value: market_address},
+               %EventAttribute{key: "borrower", value: borrower},
+               %EventAttribute{key: "borrowed", value: _},
+               %EventAttribute{key: "position_total", value: _}
+             ]
+           }
+           | rest
+         ],
+         collection
+       ) do
+    scan_events(rest, [
+      {{Market, market_address}, borrower, :borrow}
+      | collection
+    ])
+  end
+
+  defp scan_events(
+         [
+           %Event{
+             type: "wasm-ghost/repay",
+             attributes: [
+               %EventAttribute{key: "_contract_address", value: market_address},
+               %EventAttribute{key: "borrower", value: borrower},
+               %EventAttribute{key: "repaid", value: _},
+               %EventAttribute{key: "position_total", value: _}
+             ]
+           }
+           | rest
+         ],
+         collection
+       ) do
+    scan_events(rest, [
+      {{Market, market_address}, borrower, :repay}
+      | collection
+    ])
+  end
+
+  defp scan_events([_ | rest], collection), do: scan_events(rest, collection)
 end
