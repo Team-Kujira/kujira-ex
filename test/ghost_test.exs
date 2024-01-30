@@ -3,12 +3,16 @@ defmodule KujiraGhostTest do
   use ExUnit.Case
   doctest Kujira.Ghost
 
-  test "queries a vault" do
+  setup_all do
     {:ok, channel} =
       GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
+        interceptors: [{GRPC.Logger.Client, level: :info}]
       )
 
+    [channel: channel]
+  end
+
+  test "queries a vault", %{channel: channel} do
     assert Ghost.get_vault(
              channel,
              #  Mainnet USK
@@ -67,23 +71,13 @@ defmodule KujiraGhostTest do
               }}
   end
 
-  test "fetches all vaults" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "fetches all vaults", %{channel: channel} do
     {:ok, vaults} = Ghost.list_vaults(channel)
     [%Ghost.Vault{} | _] = vaults
     assert Enum.count(vaults) > 10
   end
 
-  test "queries a market" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "queries a market", %{channel: channel} do
     assert Ghost.get_market(
              channel,
              #  Mainnet KUJI-USK
@@ -112,12 +106,7 @@ defmodule KujiraGhostTest do
               }}
   end
 
-  test "loads a market status" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "loads a market status", %{channel: channel} do
     {:ok, market} =
       Ghost.get_market(
         channel,
@@ -135,12 +124,7 @@ defmodule KujiraGhostTest do
     assert market.status.borrowed > 0
   end
 
-  test "loads a market health" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "loads a market health", %{channel: channel} do
     {:ok, market} =
       Ghost.get_market(
         channel,
@@ -153,23 +137,13 @@ defmodule KujiraGhostTest do
     assert val > 0
   end
 
-  test "fetches all markets" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "fetches all markets", %{channel: channel} do
     {:ok, markets} = Ghost.list_markets(channel)
     [%Ghost.Market{} | _] = markets
     assert Enum.count(markets) > 10
   end
 
-  test "streams positions" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "streams positions", %{channel: channel} do
     {:ok, market} =
       Ghost.get_market(
         channel,

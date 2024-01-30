@@ -3,12 +3,16 @@ defmodule KujiraOrcaTest do
   use ExUnit.Case
   doctest Kujira.Orca
 
-  test "queries a queue" do
+  setup_all do
     {:ok, channel} =
       GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
+        interceptors: [{GRPC.Logger.Client, level: :info}]
       )
 
+    [channel: channel]
+  end
+
+  test "queries a queue", %{channel: channel} do
     assert Kujira.Orca.get_queue(
              channel,
              #  Mainnet KUJI - xUSK
@@ -191,12 +195,7 @@ defmodule KujiraOrcaTest do
               }}
   end
 
-  test "populates a queue" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "populates a queue", %{channel: channel} do
     {:ok, queue} =
       Kujira.Orca.get_queue(
         channel,
@@ -212,23 +211,13 @@ defmodule KujiraOrcaTest do
     end
   end
 
-  test "fetches all queues" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "fetches all queues", %{channel: channel} do
     {:ok, queues} = Kujira.Orca.list_queues(channel)
     [%Kujira.Orca.Queue{} | _] = queues
     assert Enum.count(queues) > 10
   end
 
-  test "extracts a liquidation from a transaction" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "extracts a liquidation from a transaction", %{channel: channel} do
     {:ok, %{tx_response: response}} =
       Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
         # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
@@ -253,12 +242,7 @@ defmodule KujiraOrcaTest do
            ]
   end
 
-  test "queries a bid" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "queries a bid", %{channel: channel} do
     {:ok, queue} =
       Kujira.Orca.get_queue(
         channel,
@@ -278,12 +262,7 @@ defmodule KujiraOrcaTest do
            }
   end
 
-  test "queries a user's bids" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "queries a user's bids", %{channel: channel} do
     {:ok, queue} =
       Kujira.Orca.get_queue(
         channel,
@@ -306,12 +285,7 @@ defmodule KujiraOrcaTest do
            ]
   end
 
-  test "extracts a new bid from a transaction" do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :debug}]
-      )
-
+  test "extracts a new bid from a transaction", %{channel: channel} do
     {:ok, %{tx_response: response}} =
       Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
         # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
