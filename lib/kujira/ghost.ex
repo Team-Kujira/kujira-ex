@@ -11,6 +11,7 @@ defmodule Kujira.Ghost do
   alias GRPC.Channel
   alias Kujira.Contract
   alias Kujira.Ghost.Market
+  alias Kujira.Ghost.Position
   alias Kujira.Ghost.Vault
 
   @vault_code_ids Application.get_env(:kujira, __MODULE__, vault_code_ids: [140])
@@ -144,4 +145,24 @@ defmodule Kujira.Ghost do
   @spec list_vaults(GRPC.Channel.t(), list(integer())) :: {:ok, list(Vault.t())} | :error
   def list_vaults(channel, code_ids \\ @vault_code_ids) when is_list(code_ids),
     do: Contract.list(channel, Vault, code_ids)
+
+  @doc """
+  Creates a lazy stream for fetching all positions for a Market
+  """
+  @spec stream_positions(GRPC.Channel.t(), Market.t(), Vault.t()) ::
+          %Stream{}
+  def stream_positions(channel, market, vault) do
+    Contract.stream_state_all(channel, market.address)
+    |> Stream.map(fn
+      %{"collateral_amount" => _, "debt_shares" => _, "holder" => _} = position ->
+        Position.from_response(market, vault, position)
+
+      _ ->
+        nil
+    end)
+    |> Stream.filter(fn
+      nil -> false
+      _ -> true
+    end)
+  end
 end

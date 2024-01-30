@@ -164,4 +164,36 @@ defmodule KujiraGhostTest do
     [%Ghost.Market{} | _] = markets
     assert Enum.count(markets) > 10
   end
+
+  test "streams positions" do
+    {:ok, channel} =
+      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+        interceptors: [{GRPC.Logger.Client, level: :debug}]
+      )
+
+    {:ok, market} =
+      Ghost.get_market(
+        channel,
+        "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"
+      )
+
+    {:ok, vault} = Kujira.Contract.get(channel, market.vault)
+    {:ok, vault} = Ghost.load_vault(channel, vault)
+
+    list =
+      Ghost.stream_positions(channel, market, vault)
+      |> Stream.take(101)
+      |> Enum.to_list()
+
+    # TODO: verify only 2 gRPC calls have been made to get this
+    assert Enum.count(list) == 101
+
+    assert Enum.all?(list, fn
+             %Ghost.Position{} ->
+               true
+
+             _ ->
+               false
+           end)
+  end
 end

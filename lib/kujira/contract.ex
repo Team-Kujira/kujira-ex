@@ -3,8 +3,10 @@ defmodule Kujira.Contract do
   Convenience methods for querying CosmWasm smart contracts on Kujira
   """
   alias Cosmos.Base.Query.V1beta1.PageRequest
+  alias Cosmos.Base.Query.V1beta1.PageResponse
   alias Cosmwasm.Wasm.V1.Query.Stub
   alias Cosmwasm.Wasm.V1.QueryAllContractStateRequest
+  alias Cosmwasm.Wasm.V1.QueryAllContractStateResponse
   alias Cosmwasm.Wasm.V1.QuerySmartContractStateRequest
   alias Cosmwasm.Wasm.V1.QueryContractsByCodeRequest
   alias Cosmwasm.Wasm.V1.Model
@@ -126,6 +128,48 @@ defmodule Kujira.Contract do
       err ->
         err
     end
+  end
+
+  @doc """
+  Streams the current contract state
+  """
+  def stream_state_all(channel, address, expires_in \\ 60 * 60 * 1000) do
+    Stream.resource(
+      fn ->
+        Stub.all_contract_state(
+          channel,
+          QueryAllContractStateRequest.new(address: address)
+        )
+      end,
+      fn
+        # We're on the last item and there's another page. Return that item and fetch the next page
+        {:ok,
+         %{
+           models: [%{value: value}],
+           pagination: %{next_key: next_key}
+         }}
+        when next_key != "" ->
+          next =
+            Stub.all_contract_state(
+              channel,
+              QueryAllContractStateRequest.new(
+                address: address,
+                page: PageRequest.new(key: next_key)
+              )
+            )
+
+          {[Jason.decode!(value)], next}
+
+        # Whilst we have items in the list, keep going
+        {:ok, %{models: [%{value: value} | xs]} = agg} ->
+          {[Jason.decode!(value)], {:ok, %{agg | models: xs}}}
+
+        # We're done, last page
+        {:ok, %{models: [], pagination: %{next_key: ""}}} = acc ->
+          {:halt, acc}
+      end,
+      fn _ -> nil end
+    )
   end
 
   defp decode_models(models, init \\ %{}) do
