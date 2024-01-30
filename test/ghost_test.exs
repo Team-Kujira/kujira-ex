@@ -1,4 +1,5 @@
 defmodule KujiraGhostTest do
+  alias Kujira.Ghost.Position
   alias Kujira.Ghost
   use ExUnit.Case
   use Kujira.TestHelpers
@@ -134,6 +135,26 @@ defmodule KujiraGhostTest do
     {:ok, markets} = Ghost.list_markets(channel)
     [%Ghost.Market{} | _] = markets
     assert Enum.count(markets) > 10
+  end
+
+  test "loads a position", %{channel: channel} do
+    {:ok, market} =
+      Ghost.get_market(
+        channel,
+        "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"
+      )
+
+    {:ok, position} =
+      Ghost.load_position(channel, market, "kujira1gee7m7kygxuc4xk483ceuqcfczv48ygt27xgwk")
+
+    assert %Position{
+             collateral_amount: 10_000_000,
+             debt_amount: _,
+             debt_shares: 867_378,
+             holder: "kujira1gee7m7kygxuc4xk483ceuqcfczv48ygt27xgwk",
+             market:
+               {Ghost.Market, "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"}
+           } = position
   end
 
   test "streams positions", %{channel: channel} do

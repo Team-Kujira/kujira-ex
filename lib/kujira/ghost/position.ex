@@ -33,7 +33,7 @@ defmodule Kujira.Ghost.Position do
   @type adjustment :: :deposit | :withdrawal | :borrow | :repay
 
   @spec from_query(Kujira.Ghost.Market.t(), Kujira.Ghost.Vault.t(), map()) ::
-          :error | __MODULE__.t()
+          :error | {:ok, __MODULE__.t()}
   def from_query(
         %Market{address: market},
         %Vault{status: %Vault.Status{debt_ratio: debt_ratio}},
@@ -45,24 +45,27 @@ defmodule Kujira.Ghost.Position do
       ) do
     with {collateral_amount, ""} <- Integer.parse(collateral_amount),
          {debt_shares, ""} <- Integer.parse(debt_shares) do
-      %__MODULE__{
-        market: {Market, market},
-        holder: holder,
-        collateral_amount: collateral_amount,
-        debt_shares: debt_shares,
-        debt_amount:
-          debt_shares
-          |> Decimal.new()
-          |> Decimal.mult(debt_ratio)
-          # Debt is always rounded up
-          |> Decimal.round(0, :ceiling)
-          |> Decimal.to_integer()
-      }
+      {:ok,
+       %__MODULE__{
+         market: {Market, market},
+         holder: holder,
+         collateral_amount: collateral_amount,
+         debt_shares: debt_shares,
+         debt_amount:
+           debt_shares
+           |> Decimal.new()
+           |> Decimal.mult(debt_ratio)
+           # Debt is always rounded up
+           |> Decimal.round(0, :ceiling)
+           |> Decimal.to_integer()
+       }}
     else
       _ ->
         :error
     end
   end
+
+  def from_query(%Market{}, %Vault{}, _), do: :error
 
   @doc """
   Returns all adjustments to positions found in the tx response

@@ -58,6 +58,26 @@ defmodule Kujira.Ghost do
   end
 
   @doc """
+  Loads a Position by borrower address
+  """
+
+  @spec load_position(Channel.t(), Market.t(), String.t()) :: {:ok, Position.t()} | :error
+  def load_position(channel, market, borrower) do
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, market.address, %{
+             position: %{holder: borrower}
+           }),
+         {:ok, vault} <- Contract.get(channel, market.vault),
+         {:ok, vault} <- load_vault(channel, vault),
+         {:ok, position} <- Position.from_query(market, vault, res) do
+      {:ok, position}
+    else
+      _ ->
+        :error
+    end
+  end
+
+  @doc """
   Loads the Market into a format that Orca can consume for health reporting.
   It's Memoized due to the call to `Contract.query_state_all`, clearing every 10m.
 
@@ -153,12 +173,11 @@ defmodule Kujira.Ghost do
           %Stream{}
   def stream_positions(channel, market, vault) do
     Contract.stream_state_all(channel, market.address)
-    |> Stream.map(fn
-      %{"collateral_amount" => _, "debt_shares" => _, "holder" => _} = position ->
-        Position.from_query(market, vault, position)
-
-      _ ->
-        nil
+    |> Stream.map(fn x ->
+      case Position.from_query(market, vault, x) do
+        {:ok, position} -> position
+        _ -> nil
+      end
     end)
     |> Stream.filter(fn
       nil -> false
