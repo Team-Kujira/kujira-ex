@@ -1,16 +1,9 @@
 defmodule KujiraOrcaTest do
   alias Kujira.Orca
   use ExUnit.Case
+  use Kujira.TestHelpers
+
   doctest Kujira.Orca
-
-  setup_all do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :info}]
-      )
-
-    [channel: channel]
-  end
 
   test "queries a queue", %{channel: channel} do
     assert Kujira.Orca.get_queue(

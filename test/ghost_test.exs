@@ -1,16 +1,9 @@
 defmodule KujiraGhostTest do
   alias Kujira.Ghost
   use ExUnit.Case
+  use Kujira.TestHelpers
+
   doctest Kujira.Ghost
-
-  setup_all do
-    {:ok, channel} =
-      GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
-        interceptors: [{GRPC.Logger.Client, level: :info}]
-      )
-
-    [channel: channel]
-  end
 
   test "queries a vault", %{channel: channel} do
     assert Ghost.get_vault(
@@ -172,11 +165,8 @@ defmodule KujiraGhostTest do
 
   test "extracts position change events from a transaction", %{channel: channel} do
     # Deposit + Borrow
-    {:ok, %{tx_response: response}} =
-      Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
-        # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
-        hash: "F8BF63756503756325AFBB481D70DD0200FDD55F7603CDEB4C07FD9BE4F49219"
-      })
+    %{tx_response: response} =
+      load_tx("F8BF63756503756325AFBB481D70DD0200FDD55F7603CDEB4C07FD9BE4F49219")
 
     changes = Ghost.Position.from_tx_response(response)
 

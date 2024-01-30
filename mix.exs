@@ -9,7 +9,8 @@ defmodule Kujira.MixProject do
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      package: package()
+      package: package(),
+      elixirc_paths: elixirc_paths(Mix.env())
     ]
   end
 
@@ -39,4 +40,7 @@ defmodule Kujira.MixProject do
       {:memoize, "~> 1.4"}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end
