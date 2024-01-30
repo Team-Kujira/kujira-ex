@@ -31,7 +31,7 @@ defmodule Kujira.Ghost do
   def get_market(channel, address), do: Contract.get(channel, {Market, address})
 
   @doc """
-  Fetches all Liquidation Markets. This will only change when config changes or new Markets are added.
+  Fetches all Markets. This will only change when config changes or new Markets are added.
   It's Memoized, clearing every 24h.
 
   Manually clear with `Memoize.invalidate(Kujira.Ghost, :list_markets)`
@@ -136,7 +136,7 @@ defmodule Kujira.Ghost do
   end
 
   @doc """
-  Fetches all Liquidation Vaults. This will only change when config changes or new Vaults are added.
+  Fetches all Vaults. This will only change when config changes or new Vaults are added.
   It's Memoized, clearing every 24h.
 
   Manually clear with `Memoize.invalidate(Kujira.Ghost, :list_vaults)`
