@@ -89,5 +89,6 @@ defmodule Kujira.Orca do
     channel
     |> Contract.stream_state_all(queue.address)
     |> Stream.map(&Bid.from_query(queue, &1))
+    |> Stream.filter(&(not is_nil(&1)))
   end
 end

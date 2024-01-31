@@ -35,6 +35,7 @@ defmodule Kujira.Orca.Bid do
           activation_time: DateTime.t() | nil | :not_loaded
         }
 
+  @spec from_query(Kujira.Orca.Queue.t(), map()) :: Kujira.Orca.Bid.t() | nil
   def from_query(%Queue{} = queue, %{
         "idx" => id,
         "bidder" => bidder,
@@ -50,7 +51,7 @@ defmodule Kujira.Orca.Bid do
     activation_time =
       case wait_end do
         nil -> nil
-        seconds -> DateTime.from_unix(seconds)
+        seconds -> DateTime.from_unix!(seconds)
       end
 
     %__MODULE__{
@@ -63,6 +64,8 @@ defmodule Kujira.Orca.Bid do
       activation_time: activation_time
     }
   end
+
+  def from_query(_, _), do: nil
 
   @doc """
   Returns all new bids found in a specific transaction
