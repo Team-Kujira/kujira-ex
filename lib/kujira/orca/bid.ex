@@ -5,6 +5,10 @@ defmodule Kujira.Orca.Bid do
   ## Fields
   * `:id` - The unique ID of the bid
 
+  * `:bidder` - The address that submitted the bid
+
+  * `:delegate` - An optional account that can activate the bid on behalf of the bidder
+
   * `:bid_amount` - The remaining amount of the bid_token
 
   * `:filled_amount` - The amount of collateral available for withdrawal
@@ -19,11 +23,12 @@ defmodule Kujira.Orca.Bid do
   alias Tendermint.Abci.Event
   alias Tendermint.Abci.EventAttribute
 
-  defstruct [:id, :bidder, :bid_amount, :filled_amount, :premium, :activation_time]
+  defstruct [:id, :bidder, :delegate, :bid_amount, :filled_amount, :premium, :activation_time]
 
   @type t :: %__MODULE__{
           id: String.t(),
           bidder: String.t(),
+          delegate: String.t() | nil,
           bid_amount: integer(),
           filled_amount: integer(),
           premium: Decimal.t(),
@@ -33,6 +38,7 @@ defmodule Kujira.Orca.Bid do
   def from_query(%Queue{} = queue, %{
         "idx" => id,
         "bidder" => bidder,
+        "delegate" => delegate,
         "amount" => bid_amount,
         "pending_liquidated_collateral" => filled_amount,
         "premium_slot" => premium_slot,
@@ -50,6 +56,7 @@ defmodule Kujira.Orca.Bid do
     %__MODULE__{
       id: id,
       bidder: bidder,
+      delegate: delegate,
       bid_amount: bid_amount,
       filled_amount: filled_amount,
       premium: queue.bid_pools |> Enum.at(premium_slot) |> Map.get(:premium),

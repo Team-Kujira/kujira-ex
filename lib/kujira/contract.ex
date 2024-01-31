@@ -152,7 +152,7 @@ defmodule Kujira.Contract do
               channel,
               QueryAllContractStateRequest.new(
                 address: address,
-                page: PageRequest.new(key: next_key)
+                pagination: PageRequest.new(key: next_key)
               )
             )
 

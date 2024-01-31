@@ -79,4 +79,15 @@ defmodule Kujira.Orca do
         :error
     end
   end
+
+  @doc """
+  Creates a lazy stream for fetching all bids for a Queue
+  """
+  @spec stream_positions(GRPC.Channel.t(), Queue.t()) ::
+          %Stream{}
+  def stream_positions(channel, queue) do
+    channel
+    |> Contract.stream_state_all(queue.address)
+    |> Stream.map(&Bid.from_query(queue, &1))
+  end
 end

@@ -169,11 +169,11 @@ defmodule KujiraGhostTest do
 
     list =
       Ghost.stream_positions(channel, market, vault)
-      |> Stream.take(101)
+      |> Stream.take(202)
       |> Enum.to_list()
 
     # TODO: verify only 2 gRPC calls have been made to get this
-    assert Enum.count(list) == 101
+    assert Enum.count(list) == 202
 
     assert Enum.all?(list, fn
              %Ghost.Position{} ->
