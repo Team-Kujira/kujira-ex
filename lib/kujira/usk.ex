@@ -1,16 +1,15 @@
 defmodule Kujira.Usk do
   @moduledoc """
-  Kujira's lending platform.
+  Kujira's decentralized stablecoin
 
-  It has a vault-market architecture, where multiple Market can draw down from a single Vault. A Market must be whitelisted,
-  as the repayment is guaranteed by its own execution logic, e.g. being over-collateralised and having a connection to Orca
-  to liquidate collateral when needed
+  Users deposit collateral and mint USK up to the maximum LTV permitted by the individual market
   """
 
   use Memoize
   alias GRPC.Channel
   alias Kujira.Contract
   alias Kujira.Usk.Market
+  alias Kujira.Usk.Margin
   alias Kujira.Usk.Position
   alias Kujira.Usk.Controller
 
