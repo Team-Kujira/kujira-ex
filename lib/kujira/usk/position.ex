@@ -1,4 +1,4 @@
-defmodule Kujira.Ghost.Position do
+defmodule Kujira.Usk.Position do
   @moduledoc """
   An item representing the collateral deposit vs debt position of a particular address for a particular market
 
@@ -10,59 +10,58 @@ defmodule Kujira.Ghost.Position do
 
   * `:collateral_amount` - The amount of collateral_token that has been deposited
 
-  * `:debt_shares` - The amount of debt_token minted and owned by this position
+  * `:mint_amount` - The amount of USK minted and owed by this position
 
-  * `:debt_amount` - The resultant amount of debt owed, based on the `debt_ratio`
+  * `:interest_amount` - The amount of USK owed in interest. This is ultimately deducted from the collateral during a collateral deposit, withdrawal, or liquidation
+
+  * `:debt_amount` - The total amount of USK owed - mint_amount + interest_amount
   """
 
-  alias Kujira.Ghost.Market
-  alias Kujira.Ghost.Vault
+  alias Kujira.Usk.Market
   alias Tendermint.Abci.Event
   alias Tendermint.Abci.EventAttribute
 
-  defstruct [:market, :holder, :collateral_amount, :debt_shares, :debt_amount]
+  defstruct [:market, :holder, :collateral_amount, :mint_amount, :interest_amount, :debt_amount]
 
   @type t :: %__MODULE__{
-          market: {Kujira.Ghost.Market, String.t()},
+          market: {Market, String.t()},
           holder: String.t(),
           collateral_amount: integer(),
-          debt_shares: integer(),
+          mint_amount: integer(),
+          interest_amount: integer(),
           debt_amount: integer()
         }
 
   @typedoc """
-  The direction of the adjustment to the Position: collateral deposit, collateral withdrawal, debt borrow, debt repay
+  The direction of the adjustment to the Position: collateral deposit, collateral withdrawal, debt borrow (mint), debt repay (burn)
 
   TODO: Add :liquidation
   """
   @type adjustment :: :deposit | :withdrawal | :borrow | :repay
 
-  @spec from_query(Kujira.Ghost.Market.t(), Kujira.Ghost.Vault.t(), map()) ::
+  @spec from_query(Market.t(), map()) ::
           :error | {:ok, __MODULE__.t()}
   def from_query(
         %Market{address: market},
-        %Vault{status: %Vault.Status{debt_ratio: debt_ratio}},
         %{
-          "holder" => holder,
-          "collateral_amount" => collateral_amount,
-          "debt_shares" => debt_shares
+          "owner" => owner,
+          "deposit_amount" => deposit_amount,
+          "mint_amount" => mint_amount,
+          "interest_amount" => interest_amount,
+          "liquidation_price" => _
         }
       ) do
-    with {collateral_amount, ""} <- Integer.parse(collateral_amount),
-         {debt_shares, ""} <- Integer.parse(debt_shares) do
+    with {deposit_amount, ""} <- Integer.parse(deposit_amount),
+         {mint_amount, ""} <- Integer.parse(mint_amount),
+         {interest_amount, ""} <- Integer.parse(interest_amount) do
       {:ok,
        %__MODULE__{
          market: {Market, market},
-         holder: holder,
-         collateral_amount: collateral_amount,
-         debt_shares: debt_shares,
-         debt_amount:
-           debt_shares
-           |> Decimal.new()
-           |> Decimal.mult(debt_ratio)
-           # Debt is always rounded up
-           |> Decimal.round(0, :ceiling)
-           |> Decimal.to_integer()
+         holder: owner,
+         collateral_amount: deposit_amount,
+         mint_amount: mint_amount,
+         interest_amount: interest_amount,
+         debt_amount: interest_amount + mint_amount
        }}
     else
       _ ->
@@ -70,7 +69,7 @@ defmodule Kujira.Ghost.Position do
     end
   end
 
-  def from_query(%Market{}, %Vault{}, _), do: :error
+  def from_query(%Market{}, _), do: :error
 
   @doc """
   Returns all adjustments to positions found in the tx response
@@ -93,12 +92,12 @@ defmodule Kujira.Ghost.Position do
   defp scan_events(
          [
            %Event{
-             type: "wasm-ghost/deposit",
+             type: "wasm",
              attributes: [
                %EventAttribute{key: "_contract_address", value: market_address},
-               %EventAttribute{key: "depositor", value: borrower},
-               %EventAttribute{key: "collateral_added", value: _},
-               %EventAttribute{key: "position_total", value: _}
+               %EventAttribute{key: "action", value: "deposit"},
+               %EventAttribute{key: "position", value: borrower},
+               %EventAttribute{key: "amount", value: _amount}
              ]
            }
            | rest
@@ -114,13 +113,12 @@ defmodule Kujira.Ghost.Position do
   defp scan_events(
          [
            %Event{
-             type: "wasm-ghost/withdraw",
+             type: "wasm",
              attributes: [
                %EventAttribute{key: "_contract_address", value: market_address},
-               %EventAttribute{key: "destination", value: _},
-               %EventAttribute{key: "depositor", value: borrower},
-               %EventAttribute{key: "amount", value: _},
-               %EventAttribute{key: "position_total", value: _}
+               %EventAttribute{key: "action", value: "withdraw"},
+               %EventAttribute{key: "position", value: borrower},
+               %EventAttribute{key: "amount", value: _amount}
              ]
            }
            | rest
@@ -136,12 +134,12 @@ defmodule Kujira.Ghost.Position do
   defp scan_events(
          [
            %Event{
-             type: "wasm-ghost/borrow",
+             type: "wasm",
              attributes: [
                %EventAttribute{key: "_contract_address", value: market_address},
-               %EventAttribute{key: "borrower", value: borrower},
-               %EventAttribute{key: "borrowed", value: _},
-               %EventAttribute{key: "position_total", value: _}
+               %EventAttribute{key: "action", value: "mint"},
+               %EventAttribute{key: "position", value: borrower},
+               %EventAttribute{key: "amount", value: _amount}
              ]
            }
            | rest
@@ -157,12 +155,12 @@ defmodule Kujira.Ghost.Position do
   defp scan_events(
          [
            %Event{
-             type: "wasm-ghost/repay",
+             type: "wasm",
              attributes: [
                %EventAttribute{key: "_contract_address", value: market_address},
-               %EventAttribute{key: "borrower", value: borrower},
-               %EventAttribute{key: "repaid", value: _},
-               %EventAttribute{key: "position_total", value: _}
+               %EventAttribute{key: "action", value: "burn"},
+               %EventAttribute{key: "position", value: borrower},
+               %EventAttribute{key: "amount", value: _amount}
              ]
            }
            | rest
