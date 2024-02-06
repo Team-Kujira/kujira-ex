@@ -22,6 +22,10 @@ defmodule Kujira.Usk do
                    |> Application.get_env(__MODULE__, market_code_ids: [136, 186])
                    |> Keyword.get(:market_code_ids)
 
+  @margin_code_ids :kujira
+                   |> Application.get_env(__MODULE__, margin_code_ids: [87])
+                   |> Keyword.get(:margin_code_ids)
+
   @doc """
   Fetches the Market contract and its current config from the chain.
 
@@ -60,6 +64,42 @@ defmodule Kujira.Usk do
   end
 
   @doc """
+  Fetches the Margin contract and its current config from the chain.
+
+  Config is very very rarely changed, if ever, and so this function is Memoized by default.
+  Clear with `Memoize.invalidate(Kujira.Usk, :get_margin, [address])`
+  """
+
+  @spec get_margin(Channel.t(), String.t()) :: {:ok, Margin.t()} | {:error, :not_found}
+  def get_margin(channel, address), do: Contract.get(channel, {Margin, address})
+
+  @doc """
+  Fetches all Margins. This will only change when config changes or new Margins are added.
+  It's Memoized, clearing every 24h.
+
+  Manually clear with `Memoize.invalidate(Kujira.Usk, :list_margins)`
+  """
+
+  @spec list_margins(GRPC.Channel.t(), list(integer())) :: {:ok, list(Margin.t())} | :error
+  def list_margins(channel, code_ids \\ @margin_code_ids) when is_list(code_ids),
+    do: Contract.list(channel, Margin, code_ids)
+
+  @doc """
+  Loads the current Status into the Margin.market
+  """
+  @spec load_margin(Channel.t(), Margin.t()) :: {:ok, Margin.t()} | :error
+  def load_margin(channel, margin) do
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, margin.address, %{status: %{}}),
+         {:ok, status} <- Market.Status.from_query(res) do
+      {:ok, %{margin | market: %{margin.market | status: status}}}
+    else
+      _ ->
+        :error
+    end
+  end
+
+  @doc """
   Loads a Position by borrower address
   """
 
@@ -80,6 +120,9 @@ defmodule Kujira.Usk do
   @doc """
   Loads the Market into a format that Orca can consume for health reporting.
   It's Memoized due to the call to `Contract.query_state_all`, clearing every 10m.
+
+  Can be used for both a Ghost.Market and Ghost.Margin.market, as they both use the same underlying
+  state schema
 
   Manually clear with `Memoize.invalidate(Kujira.Contract, :query_state_all, [market.address])`
   """
