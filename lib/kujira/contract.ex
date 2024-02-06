@@ -38,7 +38,7 @@ defmodule Kujira.Contract do
 
   @spec get(Channel.t(), {module(), String.t()}) :: {:ok, struct()} | {:error, :not_found}
   def get(channel, {module, address}) do
-    Memoize.Cache.get_or_run({__MODULE__, :get, [address]}, fn ->
+    Memoize.Cache.get_or_run({__MODULE__, :get, [{module, address}]}, fn ->
       with {:ok, config} <- query_state_smart(channel, address, %{config: %{}}),
            {:ok, struct} <- module.from_config(address, config) do
         {:ok, struct}
@@ -52,7 +52,7 @@ defmodule Kujira.Contract do
   @spec list(GRPC.Channel.t(), module(), list(integer())) :: {:ok, list(struct())} | :error
   def list(channel, module, code_ids) when is_list(code_ids) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :list, [code_ids]},
+      {__MODULE__, :list, [module, code_ids]},
       fn ->
         with {:ok, contracts} <- by_codes(channel, code_ids),
              {:ok, struct} <-

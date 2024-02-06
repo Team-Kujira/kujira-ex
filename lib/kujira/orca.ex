@@ -16,7 +16,7 @@ defmodule Kujira.Orca do
   Fetches the Queue contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate(Kujira.Orca, :get_queue, [address])`
+  Clear with `Memoize.invalidate(Kujira.Contract, :get, [{Queue, address}])`
   """
 
   @spec get_queue(Channel.t(), String.t()) :: {:ok, Queue.t()} | {:error, :not_found}
@@ -26,7 +26,7 @@ defmodule Kujira.Orca do
   Fetches all Liquidation Queues. This will only change when config changes or new Queues are added.
   It's Memoized, clearing every 24h.
 
-  Manually clear with `Memoize.invalidate(Kujira.Orca, :list_queues)`
+  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Queue, code_ids])`
   """
 
   @spec list_queues(GRPC.Channel.t(), list(integer())) :: {:ok, list(Queue.t())} | :error

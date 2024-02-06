@@ -29,7 +29,7 @@ defmodule Kujira.Usk do
   Fetches the Market contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate(Kujira.Usk, :get_market, [address])`
+  Clear with `Memoize.invalidate(Kujira.Contract, :get, [{Market, address}])`
   """
 
   @spec get_market(Channel.t(), String.t()) :: {:ok, Market.t()} | {:error, :not_found}
@@ -39,7 +39,7 @@ defmodule Kujira.Usk do
   Fetches all Markets. This will only change when config changes or new Markets are added.
   It's Memoized, clearing every 24h.
 
-  Manually clear with `Memoize.invalidate(Kujira.Usk, :list_markets)`
+  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Market, code_ids])`
   """
 
   @spec list_markets(GRPC.Channel.t(), list(integer())) :: {:ok, list(Market.t())} | :error
@@ -66,7 +66,7 @@ defmodule Kujira.Usk do
   Fetches the Margin contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate(Kujira.Usk, :get_margin, [address])`
+  Clear with `Memoize.invalidate(Kujira.Contract, :get, [{Margin, address}])`
   """
 
   @spec get_margin(Channel.t(), String.t()) :: {:ok, Margin.t()} | {:error, :not_found}
@@ -76,7 +76,7 @@ defmodule Kujira.Usk do
   Fetches all Margins. This will only change when config changes or new Margins are added.
   It's Memoized, clearing every 24h.
 
-  Manually clear with `Memoize.invalidate(Kujira.Usk, :list_margins)`
+  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Margin, code_ids])`
   """
 
   @spec list_margins(GRPC.Channel.t(), list(integer())) :: {:ok, list(Margin.t())} | :error

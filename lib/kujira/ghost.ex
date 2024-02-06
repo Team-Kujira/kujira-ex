@@ -24,7 +24,7 @@ defmodule Kujira.Ghost do
   Fetches the Market contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate(Kujira.Ghost, :get_market, [address])`
+  Clear with `Memoize.invalidate(Kujira.Contract, :get, [{Market, address}])`
   """
 
   @spec get_market(Channel.t(), String.t()) :: {:ok, Market.t()} | {:error, :not_found}
@@ -34,7 +34,7 @@ defmodule Kujira.Ghost do
   Fetches all Markets. This will only change when config changes or new Markets are added.
   It's Memoized, clearing every 24h.
 
-  Manually clear with `Memoize.invalidate(Kujira.Ghost, :list_markets)`
+  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Vault, code_ids])`
   """
 
   @spec list_markets(GRPC.Channel.t(), list(integer())) :: {:ok, list(Market.t())} | :error
@@ -133,7 +133,7 @@ defmodule Kujira.Ghost do
   Fetches the Vault contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate(Kujira.Ghost, :get_vault, [address])`
+  Clear with `Memoize.invalidate(Kujira.Contract, :get, [{Vault, address}])`
   """
 
   @spec get_vault(Channel.t(), String.t()) :: {:ok, Vault.t()} | {:error, :not_found}
@@ -159,7 +159,7 @@ defmodule Kujira.Ghost do
   Fetches all Vaults. This will only change when config changes or new Vaults are added.
   It's Memoized, clearing every 24h.
 
-  Manually clear with `Memoize.invalidate(Kujira.Ghost, :list_vaults)`
+  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Vault, code_ids])`
   """
 
   @spec list_vaults(GRPC.Channel.t(), list(integer())) :: {:ok, list(Vault.t())} | :error
