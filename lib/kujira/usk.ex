@@ -88,8 +88,7 @@ defmodule Kujira.Usk do
   def load_orca_market(channel, market, precision \\ 3) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
 
-    with {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000),
-         {:ok, vault} <- Contract.get(channel, market.vault) do
+    with {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000) do
       health =
         models
         |> Map.values()
@@ -98,16 +97,16 @@ defmodule Kujira.Usk do
           fn model, agg ->
             with %{
                    #  "holder" => holder,
-                   "collateral_amount" => collateral_amount,
-                   "debt_shares" => debt_shares
+                   "deposit_amount" => deposit_amount,
+                   "mint_amount" => mint_amount
                  } <- model,
-                 {debt_shares, ""} <- Integer.parse(debt_shares),
+                 {debt_amount, ""} <- Integer.parse(mint_amount),
                  {collateral_amount, ""} when collateral_amount > 0 <-
-                   Integer.parse(collateral_amount) do
+                   Integer.parse(deposit_amount) do
               liquidation_price =
-                debt_shares
+                debt_amount
                 |> Decimal.new()
-                |> Decimal.mult(vault.status.debt_ratio)
+                # TODO: Load current and historic interest rates. Calculate accrued interest
                 |> Decimal.div(collateral_amount |> Decimal.new() |> Decimal.mult(market.max_ltv))
                 |> Decimal.round(precision, :ceiling)
 
