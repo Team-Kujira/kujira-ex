@@ -3,9 +3,9 @@ defmodule Kujira.Fin.Pair do
   An individual exchange pair between a base token and a quote token.
 
   ## Fields
-  * `:address` - The address of the market
+  * `:address` - The address of the pair
 
-  * `:owner` - The owner of the market
+  * `:owner` - The owner of the pair
 
   * `:token_base` - The base token of the Pair - typically the one that's being traded
 
