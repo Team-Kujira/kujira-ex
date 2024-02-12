@@ -268,12 +268,13 @@ defmodule KujiraOrcaTest do
 
     assert bids == [
              %Kujira.Orca.Bid{
-               activation_time: nil,
-               bid_amount: 0,
+               activation_time: ~U[2024-02-12 17:48:06Z],
+               bid_amount: 4_088_981,
                bidder: "kujira1ltvwg69sw3c5z99c6rr08hal7v0kdzfxz07yj5",
-               filled_amount: 1_446_935,
-               id: "1",
-               premium: Decimal.new("0.01")
+               delegate: nil,
+               filled_amount: 0,
+               id: "2252",
+               premium: Decimal.new("0.15")
              }
            ]
   end
