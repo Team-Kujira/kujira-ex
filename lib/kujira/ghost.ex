@@ -24,7 +24,7 @@ defmodule Kujira.Ghost do
   Fetches the Market contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate(Kujira.Contract, :get, [{Market, address}])`
+  Manually clear with `Kujira.Ghost.invalidate(:get_market, address)`
   """
 
   @spec get_market(Channel.t(), String.t()) :: {:ok, Market.t()} | {:error, :not_found}
@@ -34,7 +34,7 @@ defmodule Kujira.Ghost do
   Fetches all Markets. This will only change when config changes or new Markets are added.
   It's Memoized, clearing every 24h.
 
-  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Vault, code_ids])`
+  Manually clear with `Kujira.Ghost.invalidate(:list_markets)`
   """
 
   @spec list_markets(GRPC.Channel.t(), list(integer())) :: {:ok, list(Market.t())} | :error
@@ -42,46 +42,61 @@ defmodule Kujira.Ghost do
     do: Contract.list(channel, Market, code_ids)
 
   @doc """
-  Loads the current Status into the Market
+  Loads the current Status into the Market. Default Memoization to ~ block time / 2 = 2s
+
+  Manually clear with `Kujira.Ghost.invalidate(:load_market, market)`
   """
 
   @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | :error
   def load_market(channel, market) do
-    with {:ok, res} <-
-           Contract.query_state_smart(channel, market.address, %{status: %{}}),
-         {:ok, status} <- Market.Status.from_query(res) do
-      {:ok, %{market | status: status}}
-    else
-      _ ->
-        :error
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :load_market, [market]},
+      fn ->
+        with {:ok, res} <-
+               Contract.query_state_smart(channel, market.address, %{status: %{}}),
+             {:ok, status} <- Market.Status.from_query(res) do
+          {:ok, %{market | status: status}}
+        else
+          _ ->
+            :error
+        end
+      end,
+      expires_in: 2000
+    )
   end
 
   @doc """
-  Loads a Position by borrower address
+  Loads a Position by borrower address. Default Memoization to ~ block time / 2 = 2s
+
+  Manually clear with `Kujira.Ghost.invalidate(:load_position, market, borrower)`
   """
 
   @spec load_position(Channel.t(), Market.t(), String.t()) :: {:ok, Position.t()} | :error
   def load_position(channel, market, borrower) do
-    with {:ok, res} <-
-           Contract.query_state_smart(channel, market.address, %{
-             position: %{holder: borrower}
-           }),
-         {:ok, vault} <- Contract.get(channel, market.vault),
-         {:ok, vault} <- load_vault(channel, vault),
-         {:ok, position} <- Position.from_query(market, vault, res) do
-      {:ok, position}
-    else
-      _ ->
-        :error
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :load_position, [market, borrower]},
+      fn ->
+        with {:ok, res} <-
+               Contract.query_state_smart(channel, market.address, %{
+                 position: %{holder: borrower}
+               }),
+             {:ok, vault} <- Contract.get(channel, market.vault),
+             {:ok, vault} <- load_vault(channel, vault),
+             {:ok, position} <- Position.from_query(market, vault, res) do
+          {:ok, position}
+        else
+          _ ->
+            :error
+        end
+      end,
+      expires_in: 2000
+    )
   end
 
   @doc """
-  Loads the Market into a format that Orca can consume for health reporting.
-  It's Memoized due to the call to `Contract.query_state_all`, clearing every 10m.
+  Loads the Market into a format that Orca can consume for health reporting. Default Memoization to 10 mins
 
-  Manually clear with `Memoize.invalidate(Kujira.Contract, :query_state_all, [market.address])`
+  Manually clear with `Kujira.Ghost.invalidate(:load_orca_market, market)`
   """
   @spec load_orca_market(Channel.t(), Market.t(), integer() | nil) ::
           {:ok, Kujira.Orca.Market.t()} | :error
@@ -133,33 +148,41 @@ defmodule Kujira.Ghost do
   Fetches the Vault contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate(Kujira.Contract, :get, [{Vault, address}])`
+  Manually clear with `Kujira.Ghost.invalidate(:get_vault, address)`
   """
 
   @spec get_vault(Channel.t(), String.t()) :: {:ok, Vault.t()} | {:error, :not_found}
   def get_vault(channel, address), do: Contract.get(channel, {Vault, address})
 
   @doc """
-  Loads the current Status into the Vault
+  Loads the current Status into the Vault. Default Memoization to ~ block time / 2 = 2s
+
+  Manually clear with `Kujira.Ghost.invalidate(:load_vault, vault)`
   """
 
   @spec load_vault(Channel.t(), Vault.t()) :: {:ok, Vault.t()} | :error
   def load_vault(channel, vault) do
-    with {:ok, res} <-
-           Contract.query_state_smart(channel, vault.address, %{status: %{}}),
-         {:ok, status} <- Vault.Status.from_query(res) do
-      {:ok, %{vault | status: status}}
-    else
-      _ ->
-        :error
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :load_vault, [vault]},
+      fn ->
+        with {:ok, res} <-
+               Contract.query_state_smart(channel, vault.address, %{status: %{}}),
+             {:ok, status} <- Vault.Status.from_query(res) do
+          {:ok, %{vault | status: status}}
+        else
+          _ ->
+            :error
+        end
+      end,
+      expires_in: 2000
+    )
   end
 
   @doc """
   Fetches all Vaults. This will only change when config changes or new Vaults are added.
   It's Memoized, clearing every 24h.
 
-  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Vault, code_ids])`
+  Manually clear with `Kujira.Ghost.invalidate(:list_vaults)`
   """
 
   @spec list_vaults(GRPC.Channel.t(), list(integer())) :: {:ok, list(Vault.t())} | :error
@@ -184,4 +207,40 @@ defmodule Kujira.Ghost do
       _ -> true
     end)
   end
+
+  def invalidate(:list_vaults),
+    do: Memoize.invalidate(Kujira.Contract, :list, [Vault, @vault_code_ids])
+
+  def invalidate(:list_markets),
+    do: Memoize.invalidate(Kujira.Contract, :list, [Market, @market_code_ids])
+
+  def invalidate(:get_vault, address),
+    do: Memoize.invalidate(Kujira.Contract, :get, [{Vault, address}])
+
+  def invalidate(:get_market, address),
+    do: Memoize.invalidate(Kujira.Contract, :get, [{Market, address}])
+
+  def invalidate(:list_vaults, code_ids),
+    do: Memoize.invalidate(Kujira.Contract, :list, [Vault, code_ids])
+
+  def invalidate(:list_markets, code_ids),
+    do: Memoize.invalidate(Kujira.Contract, :list, [Market, code_ids])
+
+  def invalidate(:load_vault, vault),
+    do: Memoize.invalidate(__MODULE__, :load_vault, [vault, 100])
+
+  def invalidate(:load_market, market),
+    do: Memoize.invalidate(__MODULE__, :load_market, [market, 100])
+
+  def invalidate(:load_orca_market, market),
+    do: Memoize.invalidate(Kujira.Contract, :query_state_all, [market.address])
+
+  def invalidate(:load_vault, vault, limit),
+    do: Memoize.invalidate(__MODULE__, :load_vault, [vault, limit])
+
+  def invalidate(:load_market, market, limit),
+    do: Memoize.invalidate(__MODULE__, :load_market, [market, limit])
+
+  def invalidate(:load_position, market, position),
+    do: Memoize.invalidate(__MODULE__, :load_position, [market, position])
 end

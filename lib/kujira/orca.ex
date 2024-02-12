@@ -15,8 +15,9 @@ defmodule Kujira.Orca do
   @doc """
   Fetches the Queue contract and its current config from the chain.
 
-  Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate(Kujira.Contract, :get, [{Queue, address}])`
+  Config is very very rarely changed, if ever, and so this function is Memoized forever by default.
+
+  Manually clear with `Kujira.Orca.invalidate(:get_queue, address)`
   """
 
   @spec get_queue(Channel.t(), String.t()) :: {:ok, Queue.t()} | {:error, :not_found}
@@ -26,7 +27,7 @@ defmodule Kujira.Orca do
   Fetches all Liquidation Queues. This will only change when config changes or new Queues are added.
   It's Memoized, clearing every 24h.
 
-  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Queue, code_ids])`
+  Manually clear with `Kujira.Orca.invalidate(:list_queues)`
   """
 
   @spec list_queues(GRPC.Channel.t(), list(integer())) :: {:ok, list(Queue.t())} | :error
@@ -34,50 +35,74 @@ defmodule Kujira.Orca do
     do: Contract.list(channel, Queue, code_ids)
 
   @doc """
-  Loads the current contract state into the Queue; the totals of each bid pool
+  Loads the current contract state into the Queue; the totals of each bid pool. Default Memoization to ~ block time / 2 = 2s
+
+  Manually clear with `Kujira.Orca.invalidate(:load_queue, queue)`
   """
 
   @spec load_queue(Channel.t(), Queue.t()) :: {:ok, Queue.t()} | :error
   def load_queue(channel, queue) do
-    with {:ok, %{"bid_pools" => bid_pools}} <-
-           Contract.query_state_smart(channel, queue.address, %{bid_pools: %{limit: 30}}) do
-      {:ok, Queue.load_pools(bid_pools, queue)}
-    else
-      _ ->
-        :error
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :load_queue, [queue]},
+      fn ->
+        with {:ok, %{"bid_pools" => bid_pools}} <-
+               Contract.query_state_smart(channel, queue.address, %{bid_pools: %{limit: 30}}) do
+          {:ok, Queue.load_pools(bid_pools, queue)}
+        else
+          _ ->
+            :error
+        end
+      end,
+      expires_in: 2000
+    )
   end
 
   @doc """
-  Loads a bid for a specific Queue
+  Loads a bid for a specific Queue. Default Memoization to ~ block time / 2 = 2s
+
+  Manually clear with `Kujira.Orca.invalidate(:load_bid, queue, idx)`
   """
   @spec load_bid(Channel.t(), Queue.t(), String.t()) :: {:ok, Bid.t()} | :error
   def load_bid(channel, queue, idx) do
-    with {:ok, bid} <-
-           Contract.query_state_smart(channel, queue.address, %{bid: %{bid_idx: idx}}) do
-      {:ok, Bid.from_query(queue, bid)}
-    else
-      _ ->
-        :error
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :load_bid, [queue, idx]},
+      fn ->
+        with {:ok, bid} <-
+               Contract.query_state_smart(channel, queue.address, %{bid: %{bid_idx: idx}}) do
+          {:ok, Bid.from_query(queue, bid)}
+        else
+          _ ->
+            :error
+        end
+      end,
+      expires_in: 2000
+    )
   end
 
   @doc """
-  Loads a user's bids for a specific Queue
+  Loads a user's bids for a specific Queue. Default Memoization to ~ block time / 2 = 2s
+
+  Manually clear with `Kujira.Orca.invalidate(:load_bids, queue, address)`
   """
   @spec load_bids(Channel.t(), Queue.t(), String.t()) :: {:ok, list(Bid.t())} | :error
   def load_bids(channel, queue, address, start_after \\ nil) do
-    with {:ok, %{"bids" => bids}} <-
-           Contract.query_state_smart(channel, queue.address, %{
-             bids_by_user: %{bidder: address, start_after: start_after, limit: 30}
-           }) do
-      # TODO: Page through > 30
-      bids = Enum.map(bids, &Bid.from_query(queue, &1))
-      {:ok, bids}
-    else
-      _ ->
-        :error
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :load_bid, [queue, address, start_after]},
+      fn ->
+        with {:ok, %{"bids" => bids}} <-
+               Contract.query_state_smart(channel, queue.address, %{
+                 bids_by_user: %{bidder: address, start_after: start_after, limit: 30}
+               }) do
+          # TODO: Page through > 30
+          bids = Enum.map(bids, &Bid.from_query(queue, &1))
+          {:ok, bids}
+        else
+          _ ->
+            :error
+        end
+      end,
+      expires_in: 2000
+    )
   end
 
   @doc """
@@ -91,4 +116,28 @@ defmodule Kujira.Orca do
     |> Stream.map(&Bid.from_query(queue, &1))
     |> Stream.filter(&(not is_nil(&1)))
   end
+
+  def invalidate(:list_queues),
+    do: Memoize.invalidate(Kujira.Contract, :list, [Queue, @code_ids])
+
+  def invalidate(:get_queue, address),
+    do: Memoize.invalidate(Kujira.Contract, :get, [{Queue, address}])
+
+  def invalidate(:list_queues, code_ids),
+    do: Memoize.invalidate(Kujira.Contract, :list, [Queue, code_ids])
+
+  def invalidate(:load_queue, queue),
+    do: Memoize.invalidate(__MODULE__, :load_queue, [queue, 100])
+
+  def invalidate(:load_queue, queue, limit),
+    do: Memoize.invalidate(__MODULE__, :load_queue, [queue, limit])
+
+  def invalidate(:load_bid, queue, idx),
+    do: Memoize.invalidate(__MODULE__, :load_bid, [queue, idx])
+
+  def invalidate(:load_bids, queue, address),
+    do: Memoize.invalidate(__MODULE__, :load_bids, [queue, address, nil])
+
+  def invalidate(:load_bids, queue, address, start_after),
+    do: Memoize.invalidate(__MODULE__, :load_bids, [queue, address, start_after])
 end

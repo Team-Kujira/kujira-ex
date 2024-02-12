@@ -184,7 +184,7 @@ defmodule KujiraGhostTest do
            end)
   end
 
-  test "extracts position change events from a transaction", %{channel: channel} do
+  test "extracts position change events from a transaction" do
     # Deposit + Borrow
     %{tx_response: response} =
       load_tx("F8BF63756503756325AFBB481D70DD0200FDD55F7603CDEB4C07FD9BE4F49219")
@@ -218,7 +218,7 @@ defmodule KujiraGhostTest do
              ]
   end
 
-  test "extracts vault status change events from a transaction", %{channel: channel} do
+  test "extracts vault status change events from a transaction" do
     # user withdraw
     %{tx_response: response} =
       load_tx("DA0185467777977D4E326F1EAC9AD03C46C93240C21013E4A91812BCD5BBE4D6")
