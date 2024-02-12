@@ -16,7 +16,7 @@ defmodule Kujira.Fin do
   Fetches the Pair contract and its current config from the chain.
 
   Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Clear with `Memoize.invalidate(Kujira.Contract, :get, [{Pair, address}])`
+  Clear with `Kujira.Fin.invalidate(:get_pair, address)`
   """
 
   @spec get_pair(Channel.t(), String.t()) :: {:ok, Pair.t()} | {:error, :not_found}
@@ -26,7 +26,7 @@ defmodule Kujira.Fin do
   Fetches all Pairs. This will only change when config changes or new Pairs are added.
   It's Memoized, clearing every 24h.
 
-  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Vault, code_ids])`
+  Clear with `Kujira.Fin.invalidate(:list_pairs)`
   """
 
   @spec list_pairs(GRPC.Channel.t(), list(integer())) :: {:ok, list(Pair.t())} | :error
@@ -37,6 +37,7 @@ defmodule Kujira.Fin do
   Loads the current Book into the Pair. Default Memoization to ~ block time / 2 = 2s
 
   Manually clear with `Memoize.invalidate(Kujira.Fin, :load_pair, [pair, limit])`“
+  Clear with `Kujira.Fin.invalidate(:load_pair, address)`
   """
   @spec load_pair(Channel.t(), Pair.t(), integer()) :: {:ok, Pair.t()} | :error
   def load_pair(channel, pair, limit \\ 100) do
@@ -51,4 +52,19 @@ defmodule Kujira.Fin do
       end
     end)
   end
+
+  def invalidate(:list_pairs),
+    do: Memoize.invalidate(Kujira.Contract, :list, [Vault, @pair_code_ids])
+
+  def invalidate(:get_pair, address),
+    do: Memoize.invalidate(Kujira.Contract, :get, [{Pair, address}])
+
+  def invalidate(:list_pairs, code_ids),
+    do: Memoize.invalidate(Kujira.Contract, :list, [Vault, code_ids])
+
+  def invalidate(:load_pair, pair),
+    do: Memoize.invalidate(__MODULE__, :load_pair, [pair, 100])
+
+  def invalidate(:load_pair, pair, limit),
+    do: Memoize.invalidate(__MODULE__, :load_pair, [pair, limit])
 end
