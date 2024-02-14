@@ -13,6 +13,9 @@ defmodule Kujira.Ghost do
   alias Kujira.Ghost.Market
   alias Kujira.Ghost.Position
   alias Kujira.Ghost.Vault
+  alias Cosmos.Bank.V1beta1.Query.Stub, as: BankQuery
+  alias Cosmos.Bank.V1beta1.QueryBalanceRequest
+  alias Cosmos.Bank.V1beta1.QueryBalanceResponse
 
   @vault_code_ids Application.get_env(:kujira, __MODULE__, vault_code_ids: [140])
                   |> Keyword.get(:vault_code_ids)
@@ -91,6 +94,45 @@ defmodule Kujira.Ghost do
       end,
       expires_in: 2000
     )
+  end
+
+  @doc """
+  Gets the total deposit value of an address in a Vault.
+  Under the hood, this queries the addresses balance of the receipt token, and adjusts it by the deposit_ratio
+
+  Manually clear with `Kujira.Ghost.invalidate(:get_deposit, vault, depositor)`
+  """
+
+  @spec get_deposit(Channel.t(), Vault.t(), String.t()) :: {:ok, integer()} | :error
+  def get_deposit(
+        channel,
+        %Vault{receipt_token: receipt_token, status: %Vault.Status{deposit_ratio: deposit_ratio}} =
+          vault,
+        borrower
+      ) do
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :get_deposit, [vault, borrower]},
+      fn ->
+        with {:ok, %QueryBalanceResponse{balance: %{amount: amount}}} <-
+               BankQuery.balance(
+                 channel,
+                 QueryBalanceRequest.new(address: borrower, denom: receipt_token.denom)
+               ),
+             {amount, ""} <- Decimal.parse(amount) do
+          {:ok, Decimal.mult(amount, deposit_ratio) |> Decimal.to_integer()}
+        else
+          _ ->
+            :error
+        end
+      end,
+      expires_in: 2000
+    )
+  end
+
+  def get_deposit(channel, %Vault{status: :not_loaded} = vault, borrower) do
+    with {:ok, vault} <- load_vault(channel, vault) do
+      get_deposit(channel, vault, borrower)
+    end
   end
 
   @doc """
@@ -243,4 +285,7 @@ defmodule Kujira.Ghost do
 
   def invalidate(:load_position, market, position),
     do: Memoize.invalidate(__MODULE__, :load_position, [market, position])
+
+  def invalidate(:get_deposit, vault, depositor),
+    do: Memoize.invalidate(__MODULE__, :get_deposit, [vault, depositor])
 end
