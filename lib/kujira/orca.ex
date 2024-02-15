@@ -62,7 +62,8 @@ defmodule Kujira.Orca do
 
   Manually clear with `Kujira.Orca.invalidate(:load_bid, queue, idx)`
   """
-  @spec load_bid(Channel.t(), Queue.t(), String.t()) :: {:ok, Bid.t()} | :error
+  @spec load_bid(Channel.t(), Queue.t(), String.t()) ::
+          {:ok, Bid.t()} | {:error, :not_found} | :error
   def load_bid(channel, queue, idx) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_bid, [queue, idx]},
@@ -71,6 +72,14 @@ defmodule Kujira.Orca do
                Contract.query_state_smart(channel, queue.address, %{bid: %{bid_idx: idx}}) do
           {:ok, Bid.from_query(queue, bid)}
         else
+          {:error,
+           %GRPC.RPCError{
+             message:
+               "codespace wasm code 9: query wasm contract failed: Generic error: No bids with the specified information exist",
+             status: 2
+           }} ->
+            {:error, :not_found}
+
           _ ->
             :error
         end
