@@ -31,7 +31,7 @@ defmodule Kujira.Oracle do
          {:ok, rates} <-
            Enum.reduce(rates, {:ok, %{}}, fn
              el, {:ok, acc} ->
-               case Decimal.parse(el.amount) |> IO.inspect() do
+               case Decimal.parse(el.amount) do
                  {dec, ""} ->
                    {:ok, Map.put(acc, el.denom, Decimal.div(dec, Decimal.new(10 ** 18)))}
 
