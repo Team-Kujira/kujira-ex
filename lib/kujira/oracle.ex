@@ -17,7 +17,7 @@ defmodule Kujira.Oracle do
   @spec load_price(GRPC.Channel.t(), any()) :: {:ok, Decimal.t()} | :error
   def load_price(channel, denom) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_prices, []},
+      {__MODULE__, :load_price, [denom]},
       fn ->
         with {:ok, %QueryExchangeRateResponse{exchange_rate: exchange_rate}} <-
                Stub.exchange_rate(channel, QueryExchangeRateRequest.new(denom: denom)),
