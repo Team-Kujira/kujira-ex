@@ -53,8 +53,8 @@ defmodule Kujira.Fin.Pair do
           book: :not_loaded | Book.t()
         }
 
-  @spec from_query(String.t(), map()) :: :error | {:ok, __MODULE__.t()}
-  def from_query(address, %{
+  @spec from_config(String.t(), map()) :: :error | {:ok, __MODULE__.t()}
+  def from_config(address, %{
         "owner" => owner,
         "denoms" => [denom_base, denom_quote],
         "price_precision" => %{"decimal_places" => price_precision},
