@@ -57,7 +57,7 @@ defmodule Kujira.Contract do
         with {:ok, contracts} <- by_codes(channel, code_ids),
              {:ok, struct} <-
                contracts
-               |> Task.async_stream(&get(channel, {module, &1}), timeout: 30000)
+               |> Task.async_stream(&get(channel, {module, &1}))
                |> Enum.reduce({:ok, []}, fn
                  {:ok, {:ok, x}}, {:ok, xs} ->
                    {:ok, [x | xs]}

@@ -54,6 +54,38 @@ defmodule Kujira.Fin.Pair do
         }
 
   @spec from_config(String.t(), map()) :: :error | {:ok, __MODULE__.t()}
+  # Original KUJI-axlUSDC pair does not expose some values
+
+  def from_config(
+        "kujira14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sl4e867" = address,
+        %{
+          "owner" => owner,
+          "denoms" => [denom_base, denom_quote],
+          "price_precision" => %{"decimal_places" => price_precision},
+          "is_bootstrapping" => is_bootstrapping
+        }
+      ) do
+    with {fee_taker, ""} <- Decimal.parse("0.0015"),
+         {fee_maker, ""} <- Decimal.parse("0.00075") do
+      {:ok,
+       %__MODULE__{
+         address: address,
+         owner: owner,
+         token_base: Token.from_denom(denom_base),
+         token_quote: Token.from_denom(denom_quote),
+         price_precision: price_precision,
+         decimal_delta: 0,
+         is_bootstrapping: is_bootstrapping,
+         fee_taker: fee_taker,
+         fee_maker: fee_maker,
+         book: :not_loaded
+       }}
+    else
+      _ ->
+        :error
+    end
+  end
+
   def from_config(address, %{
         "owner" => owner,
         "denoms" => [denom_base, denom_quote],
@@ -82,10 +114,5 @@ defmodule Kujira.Fin.Pair do
       _ ->
         :error
     end
-  end
-
-  # Original KUJI-axlUSDC pair does not expose fees
-  def from_config(address, params) do
-    from_config(address, Map.merge(params, %{"fee_maker" => "0.00075", "fee_taker" => "0.0015"}))
   end
 end
