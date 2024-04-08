@@ -42,7 +42,8 @@ defmodule Kujira.Usk do
   Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Market, code_ids])`
   """
 
-  @spec list_markets(GRPC.Channel.t(), list(integer())) :: {:ok, list(Market.t())} | :error
+  @spec list_markets(GRPC.Channel.t(), list(integer())) ::
+          {:ok, list(Market.t())} | {:error, GRPC.RPCError.t()}
   def list_markets(channel, code_ids \\ @market_code_ids) when is_list(code_ids),
     do: Contract.list(channel, Market, code_ids)
 
@@ -52,7 +53,7 @@ defmodule Kujira.Usk do
   Manually clear with `Kujira.Usk.invalidate(:load_market, address)`
   """
 
-  @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | :error
+  @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | {:error, GRPC.RPCError.t()}
   def load_market(channel, market) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_market, [market]},
@@ -62,8 +63,7 @@ defmodule Kujira.Usk do
              {:ok, status} <- Market.Status.from_query(res) do
           {:ok, %{market | status: status}}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 2000
@@ -88,7 +88,8 @@ defmodule Kujira.Usk do
   Manually clear with `Kujira.Usk.invalidate(:list_margins)`
   """
 
-  @spec list_margins(GRPC.Channel.t(), list(integer())) :: {:ok, list(Margin.t())} | :error
+  @spec list_margins(GRPC.Channel.t(), list(integer())) ::
+          {:ok, list(Margin.t())} | {:error, GRPC.RPCError.t()}
   def list_margins(channel, code_ids \\ @margin_code_ids) when is_list(code_ids),
     do: Contract.list(channel, Margin, code_ids)
 
@@ -97,7 +98,7 @@ defmodule Kujira.Usk do
 
   Manually clear with `Kujira.Usk.invalidate(:load_margin, margin)`
   """
-  @spec load_margin(Channel.t(), Margin.t()) :: {:ok, Margin.t()} | :error
+  @spec load_margin(Channel.t(), Margin.t()) :: {:ok, Margin.t()} | {:error, GRPC.RPCError.t()}
   def load_margin(channel, margin) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_margin, [margin]},
@@ -107,8 +108,7 @@ defmodule Kujira.Usk do
              {:ok, status} <- Market.Status.from_query(res) do
           {:ok, %{margin | market: %{margin.market | status: status}}}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 2000
@@ -121,7 +121,8 @@ defmodule Kujira.Usk do
   Manually clear with `Kujira.Usk.invalidate(:load_position, market, borrower)`
   """
 
-  @spec load_position(Channel.t(), Market.t(), String.t()) :: {:ok, Position.t()} | :error
+  @spec load_position(Channel.t(), Market.t(), String.t()) ::
+          {:ok, Position.t()} | {:error, GRPC.RPCError.t()}
   def load_position(channel, market, borrower) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_position, [market, borrower]},
@@ -133,8 +134,7 @@ defmodule Kujira.Usk do
              {:ok, position} <- Position.from_query(market, res) do
           {:ok, position}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 2000
@@ -150,7 +150,7 @@ defmodule Kujira.Usk do
   Manually clear with `Kujira.Usk.invalidate(:load_orca_market, market)`
   """
   @spec load_orca_market(Channel.t(), Market.t(), integer() | nil) ::
-          {:ok, Kujira.Orca.Market.t()} | :error
+          {:ok, Kujira.Orca.Market.t()} | {:error, GRPC.RPCError.t()}
   def load_orca_market(channel, market, precision \\ 3) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
 
@@ -206,8 +206,7 @@ defmodule Kujira.Usk do
              {:ok, controller} <- Controller.from_query(contract, res) do
           {:ok, controller}
         else
-          _ ->
-            :error
+          err -> err
         end
       end
     )

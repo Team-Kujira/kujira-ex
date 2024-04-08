@@ -30,7 +30,8 @@ defmodule Kujira.Orca do
   Manually clear with `Kujira.Orca.invalidate(:list_queues)`
   """
 
-  @spec list_queues(GRPC.Channel.t(), list(integer())) :: {:ok, list(Queue.t())} | :error
+  @spec list_queues(GRPC.Channel.t(), list(integer())) ::
+          {:ok, list(Queue.t())} | {:error, GRPC.RPCError.t()}
   def list_queues(channel, code_ids \\ @code_ids) when is_list(code_ids),
     do: Contract.list(channel, Queue, code_ids)
 
@@ -40,7 +41,7 @@ defmodule Kujira.Orca do
   Manually clear with `Kujira.Orca.invalidate(:load_queue, queue)`
   """
 
-  @spec load_queue(Channel.t(), Queue.t()) :: {:ok, Queue.t()} | :error
+  @spec load_queue(Channel.t(), Queue.t()) :: {:ok, Queue.t()} | {:error, GRPC.RPCError.t()}
   def load_queue(channel, queue) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_queue, [queue]},
@@ -49,8 +50,7 @@ defmodule Kujira.Orca do
                Contract.query_state_smart(channel, queue.address, %{bid_pools: %{limit: 30}}) do
           {:ok, Queue.load_pools(bid_pools, queue)}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 2000
@@ -63,7 +63,7 @@ defmodule Kujira.Orca do
   Manually clear with `Kujira.Orca.invalidate(:load_bid, queue, idx)`
   """
   @spec load_bid(Channel.t(), Queue.t(), String.t()) ::
-          {:ok, Bid.t()} | {:error, :not_found} | :error
+          {:ok, Bid.t()} | {:error, :not_found} | {:error, GRPC.RPCError.t()}
   def load_bid(channel, queue, idx) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_bid, [queue, idx]},
@@ -80,8 +80,8 @@ defmodule Kujira.Orca do
            }} ->
             {:error, :not_found}
 
-          _ ->
-            :error
+          err ->
+            err
         end
       end,
       expires_in: 2000
@@ -93,7 +93,8 @@ defmodule Kujira.Orca do
 
   Manually clear with `Kujira.Orca.invalidate(:load_bids, queue, address)`
   """
-  @spec load_bids(Channel.t(), Queue.t(), String.t()) :: {:ok, list(Bid.t())} | :error
+  @spec load_bids(Channel.t(), Queue.t(), String.t()) ::
+          {:ok, list(Bid.t())} | {:error, GRPC.RPCError.t()}
   def load_bids(channel, queue, address, start_after \\ nil) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_bid, [queue, address, start_after]},
@@ -106,8 +107,7 @@ defmodule Kujira.Orca do
           bids = Enum.map(bids, &Bid.from_query(queue, &1))
           {:ok, bids}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 2000

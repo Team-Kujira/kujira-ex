@@ -36,20 +36,25 @@ defmodule Kujira.Contract do
     end)
   end
 
-  @spec get(Channel.t(), {module(), String.t()}) :: {:ok, struct()} | {:error, :not_found}
+  @spec get(Channel.t(), {module(), String.t()}) ::
+          {:ok, struct()} | {:error, :not_found} | {:error, GRPC.RPCError.t()}
   def get(channel, {module, address}) do
     Memoize.Cache.get_or_run({__MODULE__, :get, [{module, address}]}, fn ->
       with {:ok, config} <- query_state_smart(channel, address, %{config: %{}}),
            {:ok, struct} <- module.from_config(address, config) do
         {:ok, struct}
       else
+        {:error, %GRPC.RPCError{}} = err ->
+          err
+
         _ ->
           {:error, :not_found}
       end
     end)
   end
 
-  @spec list(GRPC.Channel.t(), module(), list(integer())) :: {:ok, list(struct())} | :error
+  @spec list(GRPC.Channel.t(), module(), list(integer())) ::
+          {:ok, list(struct())} | {:error, GRPC.RPCError.t()}
   def list(channel, module, code_ids) when is_list(code_ids) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :list, [module, code_ids]},
@@ -67,8 +72,8 @@ defmodule Kujira.Contract do
                end) do
           {:ok, struct}
         else
-          _ ->
-            :error
+          err ->
+            err
         end
       end,
       expires_in: 24 * 60 * 60 * 1000

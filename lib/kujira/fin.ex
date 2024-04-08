@@ -30,7 +30,8 @@ defmodule Kujira.Fin do
   Manually clear with `Kujira.Fin.invalidate(:list_pairs)`
   """
 
-  @spec list_pairs(GRPC.Channel.t(), list(integer())) :: {:ok, list(Pair.t())} | :error
+  @spec list_pairs(GRPC.Channel.t(), list(integer())) ::
+          {:ok, list(Pair.t())} | {:error, GRPC.RPCError.t()}
   def list_pairs(channel, code_ids \\ @pair_code_ids) when is_list(code_ids),
     do: Contract.list(channel, Pair, code_ids)
 
@@ -39,7 +40,8 @@ defmodule Kujira.Fin do
 
   Manually clear with `Kujira.Fin.invalidate(:load_pair, address)`
   """
-  @spec load_pair(Channel.t(), Pair.t(), integer()) :: {:ok, Pair.t()} | :error
+  @spec load_pair(Channel.t(), Pair.t(), integer()) ::
+          {:ok, Pair.t()} | {:error, GRPC.RPCError.t()}
   def load_pair(channel, pair, limit \\ 100) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_pair, [pair, limit]},
@@ -49,8 +51,8 @@ defmodule Kujira.Fin do
              {:ok, book} <- Book.from_query(res) do
           {:ok, %{pair | book: book}}
         else
-          _ ->
-            :error
+          err ->
+            err
         end
       end,
       expires_in: 2000

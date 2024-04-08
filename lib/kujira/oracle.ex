@@ -14,7 +14,7 @@ defmodule Kujira.Oracle do
 
   Clear wth Kujira.Oracle.invalidate(:load_price, denom)
   """
-  @spec load_price(GRPC.Channel.t(), any()) :: {:ok, Decimal.t()} | :error
+  @spec load_price(GRPC.Channel.t(), any()) :: {:ok, Decimal.t()} | {:error, GRPC.RPCError.t()}
   def load_price(channel, denom) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_price, [denom]},
@@ -24,8 +24,7 @@ defmodule Kujira.Oracle do
              {rate, ""} <- Decimal.parse(exchange_rate) do
           {:ok, Decimal.div(rate, Decimal.new(10 ** 18))}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 200
@@ -37,7 +36,7 @@ defmodule Kujira.Oracle do
 
   Clear wth Kujira.Oracle.invalidate(:load_prices)
   """
-  @spec load_prices(GRPC.Channel.t()) :: {:ok, map()} | :error
+  @spec load_prices(GRPC.Channel.t()) :: {:ok, map()} | {:error, GRPC.RPCError.t()}
   def load_prices(channel) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_prices, []},
@@ -60,8 +59,7 @@ defmodule Kujira.Oracle do
                end) do
           {:ok, rates}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 200

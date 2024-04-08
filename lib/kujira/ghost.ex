@@ -40,7 +40,8 @@ defmodule Kujira.Ghost do
   Manually clear with `Kujira.Ghost.invalidate(:list_markets)`
   """
 
-  @spec list_markets(GRPC.Channel.t(), list(integer())) :: {:ok, list(Market.t())} | :error
+  @spec list_markets(GRPC.Channel.t(), list(integer())) ::
+          {:ok, list(Market.t())} | {:error, GRPC.RPCError.t()}
   def list_markets(channel, code_ids \\ @market_code_ids) when is_list(code_ids),
     do: Contract.list(channel, Market, code_ids)
 
@@ -50,7 +51,7 @@ defmodule Kujira.Ghost do
   Manually clear with `Kujira.Ghost.invalidate(:load_market, market)`
   """
 
-  @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | :error
+  @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | {:error, GRPC.RPCError.t()}
   def load_market(channel, market) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_market, [market]},
@@ -60,8 +61,7 @@ defmodule Kujira.Ghost do
              {:ok, status} <- Market.Status.from_query(res) do
           {:ok, %{market | status: status}}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 2000
@@ -74,7 +74,8 @@ defmodule Kujira.Ghost do
   Manually clear with `Kujira.Ghost.invalidate(:load_position, market, borrower)`
   """
 
-  @spec load_position(Channel.t(), Market.t(), String.t()) :: {:ok, Position.t()} | :error
+  @spec load_position(Channel.t(), Market.t(), String.t()) ::
+          {:ok, Position.t()} | {:error, GRPC.RPCError.t()}
   def load_position(channel, market, borrower) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_position, [market, borrower]},
@@ -88,8 +89,7 @@ defmodule Kujira.Ghost do
              {:ok, position} <- Position.from_query(market, vault, res) do
           {:ok, position}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 2000
@@ -103,7 +103,8 @@ defmodule Kujira.Ghost do
   Manually clear with `Kujira.Ghost.invalidate(:get_deposit, vault, depositor)`
   """
 
-  @spec get_deposit(Channel.t(), Vault.t(), String.t()) :: {:ok, integer()} | :error
+  @spec get_deposit(Channel.t(), Vault.t(), String.t()) ::
+          {:ok, integer()} | {:error, GRPC.RPCError.t()}
   def get_deposit(
         channel,
         %Vault{receipt_token: receipt_token, status: %Vault.Status{deposit_ratio: deposit_ratio}} =
@@ -121,8 +122,7 @@ defmodule Kujira.Ghost do
              {amount, ""} <- Decimal.parse(amount) do
           {:ok, Decimal.mult(amount, deposit_ratio) |> Decimal.to_integer()}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 2000
@@ -141,7 +141,7 @@ defmodule Kujira.Ghost do
   Manually clear with `Kujira.Ghost.invalidate(:load_orca_market, market)`
   """
   @spec load_orca_market(Channel.t(), Market.t(), integer() | nil) ::
-          {:ok, Kujira.Orca.Market.t()} | :error
+          {:ok, Kujira.Orca.Market.t()} | {:error, GRPC.RPCError.t()}
   def load_orca_market(channel, market, precision \\ 3) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
 
@@ -202,7 +202,7 @@ defmodule Kujira.Ghost do
   Manually clear with `Kujira.Ghost.invalidate(:load_vault, vault)`
   """
 
-  @spec load_vault(Channel.t(), Vault.t()) :: {:ok, Vault.t()} | :error
+  @spec load_vault(Channel.t(), Vault.t()) :: {:ok, Vault.t()} | {:error, GRPC.RPCError.t()}
   def load_vault(channel, vault) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :load_vault, [vault]},
@@ -212,8 +212,7 @@ defmodule Kujira.Ghost do
              {:ok, status} <- Vault.Status.from_query(res) do
           {:ok, %{vault | status: status}}
         else
-          _ ->
-            :error
+          err -> err
         end
       end,
       expires_in: 2000
@@ -227,7 +226,8 @@ defmodule Kujira.Ghost do
   Manually clear with `Kujira.Ghost.invalidate(:list_vaults)`
   """
 
-  @spec list_vaults(GRPC.Channel.t(), list(integer())) :: {:ok, list(Vault.t())} | :error
+  @spec list_vaults(GRPC.Channel.t(), list(integer())) ::
+          {:ok, list(Vault.t())} | {:error, GRPC.RPCError.t()}
   def list_vaults(channel, code_ids \\ @vault_code_ids) when is_list(code_ids),
     do: Contract.list(channel, Vault, code_ids)
 
