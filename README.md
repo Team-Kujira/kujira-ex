@@ -11,7 +11,7 @@ Add `kujira` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:kujira, "~> 0.1.16"}
+    {:kujira, "~> 0.1.17"}
   ]
 end
 ```
