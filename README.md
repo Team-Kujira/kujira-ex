@@ -39,7 +39,7 @@ config :my_app, MyApp.Node,
   websocket: "wss://rpc-kujira.starsquid.io"
 ```
 
-And start querying!
+## And start querying!
 
 ```elixir
 defmodule MyAppWeb.PageController do
