@@ -22,7 +22,7 @@ defmodule Kujira.Node do
 
       @impl true
       def init(_) do
-        config = Application.get_env(:kujira, Kujira.Node, [])
+        config = Application.get_env(Keyword.get(unquote(opts), :otp_app), __MODULE__, [])
 
         socket_opts = Keyword.merge(config, unquote(opts))
 
