@@ -83,4 +83,9 @@ defmodule Kujira.Fin.Pair do
         :error
     end
   end
+
+  # Original KUJI-axlUSDC pair does not expose fees
+  def from_config(address, params) do
+    from_config(address, Map.merge(params, %{"fee_maker" => "0.00075", "fee_taker" => "0.0015"}))
+  end
 end
