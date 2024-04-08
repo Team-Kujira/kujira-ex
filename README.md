@@ -39,6 +39,20 @@ config :my_app, MyApp.Node,
   websocket: "wss://rpc-kujira.starsquid.io"
 ```
 
+Add the Node process to your `application.ex`
+
+```elixir
+@impl true
+def start(_type, _args) do
+  children = [
+    #...
+    MyApp.Node
+  ]
+
+  # ...
+end
+```
+
 ## And start querying!
 
 ```elixir
