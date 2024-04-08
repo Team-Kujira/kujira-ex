@@ -59,7 +59,7 @@ defmodule MyAppWeb.PageController do
 end
 ```
 
-CometBFT Events can be sunscribed to for realtime applications
+CometBFT Events can be subscribed to for realtime applications
 
 ```elixir
 defmodule MyAppWeb.PageLive do
