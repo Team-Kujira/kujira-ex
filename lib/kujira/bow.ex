@@ -2,4 +2,77 @@ defmodule Kujira.Bow do
   @moduledoc """
   Kujira's on-chain Market Maker for FIN.
   """
+
+  alias Kujira.Contract
+  alias Kujira.Bow.Leverage
+
+  @leverage_code_ids Application.get_env(:kujira, __MODULE__, leverage_code_ids: [188])
+                     |> Keyword.get(:leverage_code_ids)
+
+  @doc """
+  Fetches the Leverage contract and its current config from the chain.
+
+  Config is very very rarely changed, if ever, and so this function is Memoized by default.
+
+  Manually clear with `Kujira.Bow.invalidate(:get_leverage, address)`
+  """
+
+  @spec get_leverage(Channel.t(), String.t()) :: {:ok, Leverage.t()} | {:error, :not_found}
+  def get_leverage(channel, address), do: Contract.get(channel, {Leverage, address})
+
+  @doc """
+  Fetches all Leverage markets. This will only change when config changes or new markets are added.
+  It's Memoized, clearing every 24h.
+
+  Manually clear with `Kujira.Bow.invalidate(:list_leverage)`
+  """
+
+  @spec list_leverage(GRPC.Channel.t(), list(integer())) ::
+          {:ok, list(Leverage.t())} | {:error, GRPC.RPCError.t()}
+  def list_leverage(channel, code_ids \\ @leverage_code_ids) when is_list(code_ids),
+    do: Contract.list(channel, Leverage, code_ids)
+
+  @doc """
+  Loads the Leverage Market into a format that Orca can consume for health reporting. Default Memoization to 10 mins
+
+  Manually clear with `Kujira.Bow.invalidate(:load_orca_market, market)`
+  """
+  @spec load_orca_market(Channel.t(), Leverage.t(), integer() | nil) ::
+          {:ok, Kujira.Orca.Market.t()} | {:error, GRPC.RPCError.t()}
+  def load_orca_market(channel, market, precision \\ 3) do
+    Decimal.Context.set(%Decimal.Context{rounding: :floor})
+
+    with {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000),
+         {:ok, vault_base} <- Contract.get(channel, market.vault_base),
+         {:ok, vault_base} <- Kujira.Ghost.load_vault(channel, vault_base),
+         {:ok, vault_quote} <- Contract.get(channel, market.vault_quote),
+         {:ok, vault_quote} <- Kujira.Ghost.load_vault(channel, vault_quote) do
+      health =
+        models
+        |> Map.values()
+        |> Enum.reduce(
+          %{},
+          fn model, agg ->
+            with %{
+                   # "idx" => idx,
+                   #  "holder" => holder,
+                   "debt_shares" => [debt_shares_base, debt_shares_quote],
+                   "lp_amount" => lp_amount
+                 } <- model,
+                 {debt_shares_base, ""} <- Integer.parse(debt_shares_base),
+                 {debt_shares_quote, ""} <- Integer.parse(debt_shares_quote),
+                 {lp_amount, ""} <- Integer.parse(lp_amount) do
+              IO.inspect({debt_shares_base, debt_shares_quote, lp_amount})
+
+              # Map.update(agg, liquidation_price, collateral_amount, &(&1 + collateral_amount))
+              agg
+            else
+              _ -> agg
+            end
+          end
+        )
+
+      {:ok, %Kujira.Orca.Market{address: market.address, health: health}}
+    end
+  end
 end

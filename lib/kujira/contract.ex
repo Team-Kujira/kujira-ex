@@ -105,6 +105,7 @@ defmodule Kujira.Contract do
     Memoize.Cache.get_or_run(
       {__MODULE__, :query_state_all, [address]},
       fn ->
+        IO.inspect(:query_state_all)
         query_state_all_page(channel, address, nil)
       end,
       expires_in: expires_in
@@ -126,6 +127,9 @@ defmodule Kujira.Contract do
       {:ok, decode_models(models, next)}
     else
       {:ok, %{models: models, pagination: %{next_key: nil}}} ->
+        {:ok, decode_models(models)}
+
+      {:ok, %{models: models, pagination: %{next_key: ""}}} ->
         {:ok, decode_models(models)}
 
       err ->
