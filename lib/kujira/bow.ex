@@ -8,6 +8,7 @@ defmodule Kujira.Bow do
   alias Kujira.Bow.Stable
   alias Kujira.Bow.Status
   alias Kujira.Bow.Xyk
+  alias Kujira.Ghost
   alias Kujira.Contract
   import Cosmos.Bank.V1beta1.Query.Stub
   alias Cosmos.Bank.V1beta1.QuerySupplyOfRequest
@@ -88,13 +89,17 @@ defmodule Kujira.Bow do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
 
     with {:ok, pool} <- Contract.get(channel, market.bow),
-         {:ok, pool} <- load_pool(channel, pool),
+         {:ok, %{status: %Status{} = pool_status}} <- load_pool(channel, pool),
          {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000),
          {:ok, vault_base} <- Contract.get(channel, market.ghost_vault_base),
-         {:ok, vault_base} <- Kujira.Ghost.load_vault(channel, vault_base),
+         {:ok, %{status: %Ghost.Vault.Status{} = vault_base_status}} <-
+           Ghost.load_vault(channel, vault_base),
          {:ok, vault_quote} <- Contract.get(channel, market.ghost_vault_quote),
-         {:ok, vault_quote} <- Kujira.Ghost.load_vault(channel, vault_quote) do
+         {:ok, %{status: %Ghost.Vault.Status{} = vault_quote_status}} <-
+           Kujira.Ghost.load_vault(channel, vault_quote) do
       IO.inspect(pool)
+      IO.inspect(vault_base)
+      IO.inspect(vault_quote)
 
       health =
         models
@@ -108,10 +113,12 @@ defmodule Kujira.Bow do
                    "debt_shares" => [debt_shares_base, debt_shares_quote],
                    "lp_amount" => lp_amount
                  } <- model,
-                 {debt_shares_base, ""} <- Integer.parse(debt_shares_base),
-                 {debt_shares_quote, ""} <- Integer.parse(debt_shares_quote),
-                 {lp_amount, ""} <- Integer.parse(lp_amount) do
-              IO.inspect({debt_shares_base, debt_shares_quote, lp_amount})
+                 {debt_shares_base, ""} <- Decimal.parse(debt_shares_base),
+                 {debt_shares_quote, ""} <- Decimal.parse(debt_shares_quote),
+                 {lp_amount, ""} <- Decimal.parse(lp_amount) do
+              debt_amount_base = Decimal.mult(debt_shares_base, vault_base_status.debt_ratio)
+              debt_amount_quote = Decimal.mult(debt_shares_quote, vault_quote_status.debt_ratio)
+              IO.inspect({debt_amount_base, debt_amount_quote, lp_amount})
 
               # Map.update(agg, liquidation_price, collateral_amount, &(&1 + collateral_amount))
               agg
