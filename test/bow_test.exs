@@ -15,7 +15,7 @@ defmodule KujiraBowTest do
     {:ok, market} =
       Bow.get_leverage(
         channel,
-        "kujira1lrk6z5yxjaractukayphr5h45v8sh3j39u25qgrqxyz0hw9wzwtssggsuk"
+        "kujira1vrwgc6j6ky6sk4a4x3axcm5fkddk88nqzrlsqkzsegledz58gm4su4exwx"
       )
 
     {:ok, health} = Bow.load_orca_market(channel, market)

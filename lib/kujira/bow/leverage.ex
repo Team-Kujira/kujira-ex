@@ -21,13 +21,13 @@ defmodule Kujira.Bow.Leverage do
 
   * `:oracle_quote` - The Oracle feed used to price the quote token
 
-  * `:vault_base` - The GHOST Vault where the base token is borrowed from
+  * `:ghost_vault_base` - The GHOST Vault where the base token is borrowed from
 
-  * `:vault_quote` - The GHOST Vault where the quote token is borrowed from
+  * `:ghost_vault_quote` - The GHOST Vault where the quote token is borrowed from
 
-  * `:orca_base` - The ORCA Queue where the base token is liquidated to repay the GHOST quote Vault
+  * `:orca_queue_base` - The ORCA Queue where the base token is liquidated to repay the GHOST quote Vault
 
-  * `:orca_quote` - The ORCA Queue where the quote token is liquidated to repay the GHOST base Vault
+  * `:orca_queue_quote` - The ORCA Queue where the quote token is liquidated to repay the GHOST base Vault
 
   * `:max_ltv` - The maximum ratio of the value of borrowed tokens to value of LP tokens, above which a position can be liquidated
 
@@ -55,9 +55,9 @@ defmodule Kujira.Bow.Leverage do
               borrowed_quote: 0
 
     @type t :: %__MODULE__{
-            deposited: integer(),
-            borrowed_base: integer(),
-            borrowed_quote: integer()
+            deposited: non_neg_integer(),
+            borrowed_base: non_neg_integer(),
+            borrowed_quote: non_neg_integer()
           }
 
     @spec from_query(map()) :: :error | {:ok, __MODULE__.t()}
@@ -94,10 +94,10 @@ defmodule Kujira.Bow.Leverage do
     :token_quote,
     :oracle_base,
     :oracle_quote,
-    :vault_base,
-    :vault_quote,
-    :orca_base,
-    :orca_quote,
+    :ghost_vault_base,
+    :ghost_vault_quote,
+    :orca_queue_base,
+    :orca_queue_quote,
     :max_ltv,
     :full_liquidation_threshold,
     :partial_liquidation_target,
@@ -113,10 +113,10 @@ defmodule Kujira.Bow.Leverage do
           token_quote: Token.t(),
           oracle_base: String.t(),
           oracle_quote: String.t(),
-          vault_base: {Ghost.Vault, String.t()},
-          vault_quote: {Ghost.Vault, String.t()},
-          orca_base: {Orca.Queue, String.t()},
-          orca_quote: {Orca.Queue, String.t()},
+          ghost_vault_base: {Ghost.Vault, String.t()},
+          ghost_vault_quote: {Ghost.Vault, String.t()},
+          orca_queue_base: {Orca.Queue, String.t()},
+          orca_queue_quote: {Orca.Queue, String.t()},
           max_ltv: Decimal.t(),
           full_liquidation_threshold: non_neg_integer(),
           partial_liquidation_target: Decimal.t(),
@@ -140,8 +140,8 @@ defmodule Kujira.Bow.Leverage do
             "oracle" => oracle_quote
           }
         ],
-        "vaults" => [vault_base, vault_quote],
-        "orcas" => [orca_base, orca_quote],
+        "vaults" => [ghost_vault_base, ghost_vault_quote],
+        "orcas" => [orca_queue_base, orca_queue_quote],
         "max_ltv" => max_ltv,
         "full_liquidation_threshold" => full_liquidation_threshold,
         "partial_liquidation_target" => partial_liquidation_target,
@@ -155,7 +155,8 @@ defmodule Kujira.Bow.Leverage do
        %__MODULE__{
          address: address,
          owner: owner,
-         bow: bow,
+         #  TODO: Figure out the polymorphism
+         bow: {Bow.Xyk, bow},
          token_base: %Token{
            denom: denom_base,
            decimals: decimals_base
@@ -166,10 +167,10 @@ defmodule Kujira.Bow.Leverage do
          },
          oracle_base: oracle_base,
          oracle_quote: oracle_quote,
-         vault_base: {Ghost.Vault, vault_base},
-         vault_quote: {Ghost.Vault, vault_quote},
-         orca_base: {Orca.Queue, orca_base},
-         orca_quote: {Orca.Queue, orca_quote},
+         ghost_vault_base: {Ghost.Vault, ghost_vault_base},
+         ghost_vault_quote: {Ghost.Vault, ghost_vault_quote},
+         orca_queue_base: {Orca.Queue, orca_queue_base},
+         orca_queue_quote: {Orca.Queue, orca_queue_quote},
          max_ltv: max_ltv,
          full_liquidation_threshold: full_liquidation_threshold,
          partial_liquidation_target: partial_liquidation_target,
