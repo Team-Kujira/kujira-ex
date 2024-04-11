@@ -79,6 +79,8 @@ defmodule Kujira.Bow do
     do: Contract.list(channel, Leverage, code_ids)
 
   @doc """
+  **WIP**
+
   Loads the Leverage Market into a format that Orca can consume for health reporting. Default Memoization to 10 mins
 
   Manually clear with `Kujira.Bow.invalidate(:load_orca_market, market)`

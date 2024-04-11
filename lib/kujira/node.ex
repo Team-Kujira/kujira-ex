@@ -41,6 +41,20 @@ defmodule Kujira.Node do
       def subscribe(topic) do
         Phoenix.PubSub.subscribe(unquote(pubsub), topic)
       end
+
+      # Expose channel properties so Node can be passed as an atom
+
+      def host(), do: channel().host
+      def port(), do: channel().port
+      def scheme(), do: channel().scheme
+      def cred(), do: channel().cred
+      def adapter(), do: channel().adapter
+      def adapter_payload(), do: channel().adapter_payload
+      def codec(), do: channel().codec
+      def interceptors(), do: channel().interceptors
+      def compressor(), do: channel().compressor
+      def accepted_compressors(), do: channel().accepted_compressors
+      def headers(), do: channel().headers
     end
   end
 end
