@@ -36,6 +36,7 @@ defmodule Kujira.Ghost.Vault do
 
     alias Tendermint.Abci.Event
     alias Tendermint.Abci.EventAttribute
+    alias Cosmos.Base.Abci.V1beta1.TxResponse
     alias Kujira.Ghost.Vault
 
     defstruct deposited: 0,

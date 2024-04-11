@@ -20,6 +20,7 @@ defmodule Kujira.Usk.Position do
   alias Kujira.Usk.Market
   alias Tendermint.Abci.Event
   alias Tendermint.Abci.EventAttribute
+  alias Cosmos.Base.Abci.V1beta1.TxResponse
 
   defstruct [:market, :holder, :collateral_amount, :mint_amount, :interest_amount, :debt_amount]
 

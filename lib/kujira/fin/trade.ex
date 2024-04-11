@@ -28,6 +28,7 @@ defmodule Kujira.Fin.Trade do
 
   alias Kujira.Fin.Pair
   alias Tendermint.Abci.EventAttribute
+  alias Cosmos.Base.Abci.V1beta1.TxResponse
 
   defstruct [
     :id,

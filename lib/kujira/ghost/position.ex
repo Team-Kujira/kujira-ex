@@ -19,6 +19,7 @@ defmodule Kujira.Ghost.Position do
   alias Kujira.Ghost.Vault
   alias Tendermint.Abci.Event
   alias Tendermint.Abci.EventAttribute
+  alias Cosmos.Base.Abci.V1beta1.TxResponse
 
   defstruct [:market, :holder, :collateral_amount, :debt_shares, :debt_amount]
 
