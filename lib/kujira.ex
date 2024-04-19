@@ -5,7 +5,7 @@ defmodule Kujira do
 
   import Cosmos.Tx.V1beta1.Service.Stub
   alias Cosmos.Tx.V1beta1.GetTxsEventRequest
-  alias Cosmos.Base.Abci.V1beta1.SearchTxsResult
+  alias Cosmos.Tx.V1beta1.GetTxsEventResponse
   alias Cosmos.Base.Query.V1beta1.PageRequest
   alias Cosmos.Tx.V1beta1.OrderBy
 
@@ -23,7 +23,7 @@ defmodule Kujira do
             limit: number()
           )
         ) ::
-          {:ok, SearchTxsResult} | {:error, GRPC.RPCError.t()}
+          {:ok, GetTxsEventResponse} | {:error, GRPC.RPCError.t()}
   def txs_by_sender(channel, address, opts \\ []) do
     pagination = Keyword.get(opts, :pagination)
     order_by = Keyword.get(opts, :order_by)
