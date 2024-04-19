@@ -24,7 +24,7 @@ defmodule Kujira do
           )
         ) ::
           {:ok, SearchTxsResult} | {:error, GRPC.RPCError.t()}
-  def txs_by_sender(channel, address, opts) do
+  def txs_by_sender(channel, address, opts \\ []) do
     pagination = Keyword.get(opts, :pagination)
     order_by = Keyword.get(opts, :order_by)
     page = Keyword.get(opts, :page)
