@@ -19,6 +19,5 @@ defmodule KujiraBowTest do
       )
 
     {:ok, health} = Bow.load_orca_market(channel, market)
-    IO.inspect(health)
   end
 end

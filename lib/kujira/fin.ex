@@ -9,7 +9,7 @@ defmodule Kujira.Fin do
   alias Kujira.Fin.Pair
   alias Kujira.Fin.Book
 
-  @pair_code_ids Application.get_env(:kujira, __MODULE__, pair_code_ids: [63, 134, 162])
+  @pair_code_ids Application.get_env(:kujira, __MODULE__, pair_code_ids: [283])
                  |> Keyword.get(:pair_code_ids)
 
   @doc """

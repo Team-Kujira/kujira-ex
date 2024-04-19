@@ -13,7 +13,7 @@ defmodule Kujira.Bow do
   import Cosmos.Bank.V1beta1.Query.Stub
   alias Cosmos.Bank.V1beta1.QuerySupplyOfRequest
 
-  @leverage_code_ids Application.get_env(:kujira, __MODULE__, leverage_code_ids: [188])
+  @leverage_code_ids Application.get_env(:kujira, __MODULE__, leverage_code_ids: [188, 290])
                      |> Keyword.get(:leverage_code_ids)
 
   @doc """
@@ -83,6 +83,26 @@ defmodule Kujira.Bow do
 
   Loads the Leverage Market into a format that Orca can consume for health reporting. Default Memoization to 10 mins
 
+  The liquidation price of a position is dependent on the algorithm of the BOW pool.
+
+  Eg: KUJI is at 2 USDC when a position is opened. The BOW pool is in a 1:2 ratio, and I deposit 100 KUJI and borrow 200 USDC.
+  My initial LTV is 0.5 - a total of $400 of LP tokens with $200 borrowed.
+  Say the max LTV is 0.8, then liquidation can ocurr when the LP value decreases to 250 USDC.
+  In this instance, as the ratio of the pool should be the current price, there will be 125 USDC and X * 125 = 20000 so 160 KUJI where the price is now 0.78125
+
+  The liquidation price if KUJI is the borrowed asset is the same deviation in the opposite direction
+  I deposit 200 USDC and borrow 100 KUJI
+  Max LTV 0.8 liquidation can ocurr when LP value is 125 KUJI
+  So there'll be 62.5 KUJI and 62.5 * Y = 20000 so 320 USDC and the price is 5.12
+
+  Blended liquidation price
+  I deposit 100 USDC, 75 KUJI and borrow 100 USDC and 25 KUJI
+  Max LTV 0.8 liquidation can ocurr when LP value is 125 KUJI
+  So there'll be 62.5 KUJI and 62.5 * Y = 20000 so 320 USDC and the price is 5.12
+
+
+
+
   Manually clear with `Kujira.Bow.invalidate(:load_orca_market, market)`
   """
   @spec load_orca_market(Channel.t(), Leverage.t(), integer() | nil) ::
@@ -99,9 +119,9 @@ defmodule Kujira.Bow do
          {:ok, vault_quote} <- Contract.get(channel, market.ghost_vault_quote),
          {:ok, %{status: %Ghost.Vault.Status{} = vault_quote_status}} <-
            Kujira.Ghost.load_vault(channel, vault_quote) do
-      IO.inspect(pool)
-      IO.inspect(vault_base)
-      IO.inspect(vault_quote)
+      # IO.inspect(pool)
+      # IO.inspect(vault_base)
+      # IO.inspect(vault_quote)
 
       health =
         models
@@ -120,8 +140,7 @@ defmodule Kujira.Bow do
                  {lp_amount, ""} <- Decimal.parse(lp_amount) do
               debt_amount_base = Decimal.mult(debt_shares_base, vault_base_status.debt_ratio)
               debt_amount_quote = Decimal.mult(debt_shares_quote, vault_quote_status.debt_ratio)
-              IO.inspect({debt_amount_base, debt_amount_quote, lp_amount})
-
+              # IO.inspect({debt_amount_base, debt_amount_quote, lp_amount})
               # Map.update(agg, liquidation_price, collateral_amount, &(&1 + collateral_amount))
               agg
             else

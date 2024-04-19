@@ -211,26 +211,23 @@ defmodule KujiraOrcaTest do
   end
 
   test "extracts a liquidation from a transaction", %{channel: channel} do
-    {:ok, %{tx_response: response}} =
-      Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
-        # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
-        hash: "BC02D586A26C5FBA1B95F79332316BFE58E037E7FD94CE2E377011FC1BDBD4CD"
-      })
+    %{tx_response: response} =
+      load_tx("E9262E61B7AB1E38F87AEFDDC895DDE62D398AAB3266FDEE7CE9D8893BAAED91")
 
     liquidations = Orca.Liquidation.from_tx_response(response)
 
     assert liquidations == [
              %Orca.Liquidation{
-               bid_amount: 4_100_551_365,
-               collateral_amount: 6_400_000_000_014_715_799_261,
-               fee_amount: 41_005_512,
-               height: 16_840_386,
+               bid_amount: 427_683_367,
+               collateral_amount: 432_068_606_295_908_982_392,
+               fee_amount: 4_276_832,
+               height: 18_498_905,
                market_address:
-                 "kujira1zc3a6ncr4lajr9du6chuxwef34l8ppj9h8x0yc3fslkk82da9m2sajlmv2",
-               queue_address: "kujira1nt76mfz0jx9dzz6mgxd2hvxwzs9tjkn9sm335mrx66zc4xx7mh5qpr8v2v",
-               repay_amount: 4_059_545_852,
-               timestamp: ~U[2024-01-23T14:10:54Z],
-               txhash: "BC02D586A26C5FBA1B95F79332316BFE58E037E7FD94CE2E377011FC1BDBD4CD"
+                 "kujira1wgxks9jwla3q6axpk0vjg89ujvet9t94dd0xtqueqjx59g46e4zq4mvd9a",
+               queue_address: "kujira1hdm7rw8t9903t5etqc6mpce3q5dslqqhczznvkz5xr4rzrq72gpqwkxlws",
+               repay_amount: 423_406_534,
+               timestamp: ~U[2024-04-19 02:23:51Z],
+               txhash: "E9262E61B7AB1E38F87AEFDDC895DDE62D398AAB3266FDEE7CE9D8893BAAED91"
              }
            ]
   end
@@ -239,22 +236,22 @@ defmodule KujiraOrcaTest do
     {:ok, queue} =
       Kujira.Orca.get_queue(
         channel,
-        #  Mainnet LUNA - USK
-        "kujira1sdlp8eqp4md6waqv2x9vlvt9dtzyx9ztt0zvkfxaw9kxh3t5gdvqypxlwz"
+        #  Mainnet ATOM - USK
+        "kujira1q8y46xg993cqg3xjycyw2334tepey7dmnh5jk2psutrz3fc69teskctgfc"
       )
 
     {:error, :not_found} = Kujira.Orca.load_bid(channel, queue, "1")
 
-    {:ok, bid} = Kujira.Orca.load_bid(channel, queue, "2252")
+    {:ok, bid} = Kujira.Orca.load_bid(channel, queue, "9434")
 
     assert bid == %Kujira.Orca.Bid{
-             activation_time: nil,
-             bid_amount: 4_088_981,
-             bidder: "kujira1ltvwg69sw3c5z99c6rr08hal7v0kdzfxz07yj5",
+             activation_time: ~U[2024-04-19 11:13:26Z],
+             bid_amount: 10000,
+             bidder: "kujira1gee7m7kygxuc4xk483ceuqcfczv48ygt27xgwk",
              delegate: nil,
              filled_amount: 0,
-             id: "2252",
-             premium: Decimal.new("0.15")
+             id: "9434",
+             premium: Decimal.new("0.30")
            }
   end
 
@@ -262,45 +259,43 @@ defmodule KujiraOrcaTest do
     {:ok, queue} =
       Kujira.Orca.get_queue(
         channel,
-        #  Mainnet LUNA - USK
-        "kujira1sdlp8eqp4md6waqv2x9vlvt9dtzyx9ztt0zvkfxaw9kxh3t5gdvqypxlwz"
+        #  Mainnet ATOM - USK
+        "kujira1q8y46xg993cqg3xjycyw2334tepey7dmnh5jk2psutrz3fc69teskctgfc"
       )
 
     {:ok, bids} =
-      Kujira.Orca.load_bids(channel, queue, "kujira1ltvwg69sw3c5z99c6rr08hal7v0kdzfxz07yj5")
+      Kujira.Orca.load_bids(channel, queue, "kujira1gee7m7kygxuc4xk483ceuqcfczv48ygt27xgwk")
 
     assert bids == [
              %Kujira.Orca.Bid{
-               activation_time: nil,
-               bid_amount: 4_088_981,
-               bidder: "kujira1ltvwg69sw3c5z99c6rr08hal7v0kdzfxz07yj5",
+               activation_time: ~U[2024-04-19 11:13:26Z],
+               bid_amount: 10000,
+               bidder: "kujira1gee7m7kygxuc4xk483ceuqcfczv48ygt27xgwk",
                delegate: nil,
                filled_amount: 0,
-               id: "2252",
-               premium: Decimal.new("0.15")
+               id: "9434",
+               premium: Decimal.new("0.30")
              }
            ]
   end
 
   test "extracts a new bid from a transaction", %{channel: channel} do
-    {:ok, %{tx_response: response}} =
-      Cosmos.Tx.V1beta1.Service.Stub.get_tx(channel, %Cosmos.Tx.V1beta1.GetTxRequest{
-        # TODO: Mock transaction responses as they'll eventually be pruned from gRPC nodes
-        hash: "968B00A8A38B4FE26694B2C5B8AEEB50437E13A916103AFB2DC3A7529B1AA212"
-      })
+    %{tx_response: response} =
+      load_tx("B6D8161EAEA1639E5CF5DB3BB04481B63BA254A31726F2A171401D1482392071")
 
     bids = Orca.Bid.from_tx_response(channel, response)
 
     assert bids ==
              [
-               {"kujira1zkh4y25snp78qt6zauucklw7wuudss2n5vuya7p79uah922uwudqmw6r8a",
+               {"kujira1sdlp8eqp4md6waqv2x9vlvt9dtzyx9ztt0zvkfxaw9kxh3t5gdvqypxlwz",
                 %Kujira.Orca.Bid{
                   activation_time: :not_loaded,
-                  bid_amount: 989_344_412,
-                  bidder: "kujira1el4z7lxhq970vdcyhk24lvaus58d5ghazgqmfk",
+                  bid_amount: 4_478_381,
+                  bidder: "kujira15ursa2ykyryvdqjafyuu4spntex3us7m22lpzp",
+                  delegate: nil,
                   filled_amount: 0,
-                  id: "158",
-                  premium: Decimal.new("0.030")
+                  id: "2393",
+                  premium: Decimal.new("0.15")
                 }}
              ]
   end

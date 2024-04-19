@@ -18,7 +18,7 @@ defmodule Kujira.Usk do
                       |> Keyword.get(:controller_code_id)
 
   @market_code_ids :kujira
-                   |> Application.get_env(__MODULE__, market_code_ids: [136, 186])
+                   |> Application.get_env(__MODULE__, market_code_ids: [73])
                    |> Keyword.get(:market_code_ids)
 
   @margin_code_ids :kujira
@@ -129,7 +129,7 @@ defmodule Kujira.Usk do
       fn ->
         with {:ok, res} <-
                Contract.query_state_smart(channel, market.address, %{
-                 position: %{holder: borrower}
+                 position: %{address: borrower}
                }),
              {:ok, position} <- Position.from_query(market, res) do
           {:ok, position}

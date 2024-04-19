@@ -1,6 +1,6 @@
 defmodule Kujira.Ghost.Market do
   @moduledoc """
-  A Ghoat market taked deposits of collateral_token, and allows borrowing of the vault.deposit_token, up to the maximum LTV as quoted by the oracle denoms
+  A Ghost market takes deposits of collateral_token, and allows borrowing of the vault.deposit_token, up to the maximum LTV as quoted by the oracle denoms
 
   ## Fields
   * `:address` - The address of the market

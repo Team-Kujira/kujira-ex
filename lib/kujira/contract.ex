@@ -105,7 +105,6 @@ defmodule Kujira.Contract do
     Memoize.Cache.get_or_run(
       {__MODULE__, :query_state_all, [address]},
       fn ->
-        IO.inspect(:query_state_all)
         query_state_all_page(channel, address, nil)
       end,
       expires_in: expires_in

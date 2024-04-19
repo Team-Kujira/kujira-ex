@@ -48,8 +48,7 @@ defmodule Kujira.Usk.Position do
           "owner" => owner,
           "deposit_amount" => deposit_amount,
           "mint_amount" => mint_amount,
-          "interest_amount" => interest_amount,
-          "liquidation_price" => _
+          "interest_amount" => interest_amount
         }
       ) do
     with {deposit_amount, ""} <- Integer.parse(deposit_amount),
@@ -148,7 +147,7 @@ defmodule Kujira.Usk.Position do
          collection
        ) do
     scan_events(rest, [
-      {{Market, market_address}, borrower, :borrow}
+      {{Market, market_address}, borrower, :mint}
       | collection
     ])
   end
@@ -169,7 +168,7 @@ defmodule Kujira.Usk.Position do
          collection
        ) do
     scan_events(rest, [
-      {{Market, market_address}, borrower, :repay}
+      {{Market, market_address}, borrower, :burn}
       | collection
     ])
   end

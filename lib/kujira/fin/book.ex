@@ -55,4 +55,65 @@ defmodule Kujira.Fin.Book do
        bids: Enum.map(bids, &Price.from_query(:bid, &1))
      }}
   end
+
+  @doc """
+  Simulates a market swap on the book, prior to deduction of fees
+
+  ## Examples
+
+    A 10 unit (with 6dp) buy, with sell orders at 0.09, 0.10, 0.11 and 0.21
+
+    - 10 base tokens are bought for 0.9 quote tokens, 9.1 remaining
+    - 15 base tokens are bought for 1.5 quote tokens, 7.6 remaining
+    - 18 base tokens are bought for 2.16 quote tokens, 5.44 remaining
+    - Final 5.44 quote tokens buy at 0.21 - 25.904761. leaving 14.095239 of orders remaining
+
+    Total return: 10 + 15 + 18 + 25.904761 = 68.904761
+    Total spend = 10
+    Average price = 0.1451278526
+
+    iex> Kujira.Fin.Book.simulate_market_order(%Kujira.Fin.Book{asks: [
+    ...>   %Kujira.Fin.Book.Price{price: Decimal.from_float(0.09), total: 10_000_000},
+    ...>   %Kujira.Fin.Book.Price{price: Decimal.from_float(0.10), total: 15_000_000},
+    ...>   %Kujira.Fin.Book.Price{price: Decimal.from_float(0.12), total: 18_000_000},
+    ...>   %Kujira.Fin.Book.Price{price: Decimal.from_float(0.21), total: 40_000_000},
+    ...> ]}, 10_000_000, :buy)
+    {:ok, {
+      68_904_761,
+      Decimal.from_float(0.1451278526),
+      %Kujira.Fin.Book{
+        asks: [
+          %Kujira.Fin.Book.Price{
+            price: Decimal.from_float(0.21),
+            total: 14_095_239
+          }
+        ]
+      }
+    }}
+  """
+
+  # @spec simulate_market_order(__MODULE__.t(), integer(), :buy | :sell) ::
+  #         {:ok, {integer(), Decimal.t()}, __MODULE__.t()}
+  #         | {:error, :insufficient_liquidity, __MODULE__.t()}
+
+  # def simulate_market_order(
+  #       %__MODULE__{asks: [%{price: price, total: total} | asks]} = book,
+  #       amount,
+  #       :buy
+  #     ) do
+  #   max_return = Decimal.mult(price, total)
+
+  #   if max_return > amount do
+  #     remaining = max(0, amount - max_return)
+  #     simulate_market_order(%{book | asks: asks}, remaining, :buy)
+  #   else
+  #     consumed = Decimal.div(amount, price)
+  #     remaining = 0
+  #     ask = %{ask | total: total - consumed}
+  #     simulate_market_order(%{book | asks: [ask | asks]}, 0, :buy)
+  #   end
+  # end
+
+  # def simulate_market_order(%__MODULE__{bids: bids}, amount, :sell) do
+  # end
 end
