@@ -57,6 +57,8 @@ defmodule Kujira.Fin.Book do
   end
 
   @doc """
+  **WIP**
+
   Simulates a market swap on the book, prior to deduction of fees
 
   ## Examples
@@ -92,28 +94,28 @@ defmodule Kujira.Fin.Book do
     }}
   """
 
-  # @spec simulate_market_order(__MODULE__.t(), integer(), :buy | :sell) ::
-  #         {:ok, {integer(), Decimal.t()}, __MODULE__.t()}
-  #         | {:error, :insufficient_liquidity, __MODULE__.t()}
+  @spec simulate_market_order(__MODULE__.t(), integer(), :buy | :sell) ::
+          {:ok, {integer(), Decimal.t()}, __MODULE__.t()}
+          | {:error, :insufficient_liquidity, __MODULE__.t()}
 
-  # def simulate_market_order(
-  #       %__MODULE__{asks: [%{price: price, total: total} | asks]} = book,
-  #       amount,
-  #       :buy
-  #     ) do
-  #   max_return = Decimal.mult(price, total)
+  def simulate_market_order(
+        %__MODULE__{asks: [%{price: price, total: total} | asks]} = book,
+        amount,
+        :buy
+      ) do
+    max_return = Decimal.mult(price, total)
 
-  #   if max_return > amount do
-  #     remaining = max(0, amount - max_return)
-  #     simulate_market_order(%{book | asks: asks}, remaining, :buy)
-  #   else
-  #     consumed = Decimal.div(amount, price)
-  #     remaining = 0
-  #     ask = %{ask | total: total - consumed}
-  #     simulate_market_order(%{book | asks: [ask | asks]}, 0, :buy)
-  #   end
-  # end
+    if max_return > amount do
+      remaining = max(0, amount - max_return)
+      simulate_market_order(%{book | asks: asks}, remaining, :buy)
+    else
+      consumed = Decimal.div(amount, price)
+      remaining = 0
+      ask = %{ask | total: total - consumed}
+      simulate_market_order(%{book | asks: [ask | asks]}, 0, :buy)
+    end
+  end
 
-  # def simulate_market_order(%__MODULE__{bids: bids}, amount, :sell) do
-  # end
+  def simulate_market_order(%__MODULE__{bids: bids}, amount, :sell) do
+  end
 end
