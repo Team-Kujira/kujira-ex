@@ -111,7 +111,7 @@ defmodule Kujira.Fin.Book do
     else
       consumed = Decimal.div(amount, price)
       remaining = 0
-      ask = %{ask | total: total - consumed}
+      # ask = %{ask | total: total - consumed}
       simulate_market_order(%{book | asks: [ask | asks]}, 0, :buy)
     end
   end
