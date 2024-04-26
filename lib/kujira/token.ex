@@ -5,12 +5,13 @@ defmodule Kujira.Token do
 
   use Memoize
 
-  defstruct [:denom, :decimals, :trace]
+  defstruct [:denom, :decimals, :trace, :meta]
 
   @type t :: %__MODULE__{
           denom: String.t(),
           decimals: integer(),
-          trace: __MODULE__.Trace.t() | nil
+          trace: __MODULE__.Trace.t() | nil,
+          meta: __MODULE__.Meta.t()
         }
 
   @doc """
@@ -27,11 +28,18 @@ defmodule Kujira.Token do
 
   def from_denom(channel, "ibc/" <> hash) do
     with {:ok, trace} <- __MODULE__.Trace.from_hash(channel, hash) do
-      {:ok, %__MODULE__{denom: "ibc/#{hash}", decimals: 6, trace: trace}}
+      {:ok,
+       %__MODULE__{denom: "ibc/#{hash}", decimals: 6, trace: trace}
+       |> set_meta()}
     end
   end
 
   def from_denom(_, denom) do
-    {:ok, %__MODULE__{denom: denom, decimals: 6, trace: nil}}
+    {:ok, %__MODULE__{denom: denom, decimals: 6, trace: nil} |> set_meta()}
+  end
+
+  # No trace, local asset
+  def set_meta(token) do
+    %{token | meta: __MODULE__.Meta.from_token(token)}
   end
 end
