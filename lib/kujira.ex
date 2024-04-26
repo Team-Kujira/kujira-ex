@@ -41,4 +41,29 @@ defmodule Kujira do
       )
     )
   end
+
+  @doc"""
+  Decodes an Any (eg sdk.Tx, PubKey etc to the Elixir defined type)
+  """
+  def decode(%Google.Protobuf.Any{
+    type_url: type_url,
+    value: value
+  }) do
+    module = to_module(type_url)
+    module.decode(value)
+  end
+
+  defp to_module("/" <> type_url) do
+    parts = type_url
+      |> String.split( ".")
+      |> Enum.map(&capitalize/1)
+      |> Enum.join(".")
+
+    String.to_existing_atom("Elixir." <> parts)
+  end
+
+  defp capitalize(string) do
+    with <<c :: utf8, rest :: binary>> <- string,
+      do: String.upcase(<<c>>) <> rest
+  end
 end

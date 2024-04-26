@@ -47,7 +47,7 @@ defmodule Kujira.Fin do
       {__MODULE__, :load_pair, [pair, limit]},
       fn ->
         with {:ok, res} <-
-               Contract.query_state_smart(channel, pair.address, %{book: %{}}),
+               Contract.query_state_smart(channel, pair.address, %{book: %{limit: limit}}),
              {:ok, book} <- Book.from_query(res) do
           {:ok, %{pair | book: book}}
         else

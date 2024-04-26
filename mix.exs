@@ -37,7 +37,8 @@ defmodule Kujira.MixProject do
       {:grpc, "~> 0.5.0"},
       {:kujira_proto, "~> 0.9.3"},
       {:jason, "~> 1.2"},
-      {:memoize, "~> 1.4"}
+      {:memoize, "~> 1.4"},
+      {:websockex, "~> 0.4.3"}
     ]
   end
 
