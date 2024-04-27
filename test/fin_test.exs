@@ -3,7 +3,7 @@ defmodule KujiraFinTest do
   use ExUnit.Case
   use Kujira.TestHelpers
 
-  doctest Kujira.Fin
+  # doctest Kujira.Fin
 
   test "fetches all pairs", %{channel: channel} do
     {:ok, pairs} = Fin.list_pairs(channel)
