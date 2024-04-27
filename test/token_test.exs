@@ -7,7 +7,7 @@ defmodule KujiraTokenTest do
 
   test "a native token correctly", %{channel: channel} do
     {:ok, token} = Token.from_denom(channel, "ukuji")
-    assert %Token{denom: "ukuji", decimals: 6} = token
+    assert %Token{denom: "ukuji"} = token
   end
 
   test "an ibc token correctly", %{channel: channel} do
@@ -19,7 +19,6 @@ defmodule KujiraTokenTest do
 
     %Token{
       denom: "ibc/FE98AAD68F02F03565E9FA39A5E627946699B2B07115889ED812D8BA639576A9",
-      decimals: 6,
       trace: %Token.Trace{
         base_denom: "uusdc",
         path: "transfer/channel-62"
@@ -32,10 +31,10 @@ defmodule KujiraTokenTest do
 
     assert token == %Token{
              denom: "ukuji",
-             decimals: 6,
              meta: %Kujira.Token.Meta{
                coingecko_id: "kujira",
                name: "Kujira",
+               decimals: 6,
                png:
                  "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/kuji.png",
                svg:
@@ -46,29 +45,29 @@ defmodule KujiraTokenTest do
            }
   end
 
-  # test "fetches ibc chain-registry metadata correctly", %{channel: channel} do
-  #   {:ok, token} =
-  #     Token.from_denom(
-  #       channel,
-  #       "ibc/FE98AAD68F02F03565E9FA39A5E627946699B2B07115889ED812D8BA639576A9"
-  #     )
+  test "fetches ibc chain-registry metadata correctly", %{channel: channel} do
+    {:ok, token} =
+      Token.from_denom(
+        channel,
+        "ibc/FE98AAD68F02F03565E9FA39A5E627946699B2B07115889ED812D8BA639576A9"
+      )
 
-  #   assert token == %Token{
-  #            denom: "ibc/FE98AAD68F02F03565E9FA39A5E627946699B2B07115889ED812D8BA639576A9",
-  #            decimals: 6,
-  #            trace: %Token.Trace{
-  #              base_denom: "uusdc",
-  #              path: "transfer/channel-62"
-  #            },
-  #            meta: %Token.Meta{
-  #              name: "USD Coin",
-  #              symbol: "USDC",
-  #              coingecko_id: "usd-coin",
-  #              png:
-  #                "https://raw.githubusercontent.com/cosmos/chain-registry/master/noble/images/USDCoin.png",
-  #              svg:
-  #                "https://raw.githubusercontent.com/cosmos/chain-registry/master/noble/images/USDCoin.svg"
-  #            }
-  #          }
-  # end
+    assert token == %Token{
+             denom: "ibc/FE98AAD68F02F03565E9FA39A5E627946699B2B07115889ED812D8BA639576A9",
+             trace: %Token.Trace{
+               base_denom: "uusdc",
+               path: "transfer/channel-62"
+             },
+             meta: %Token.Meta{
+               name: "USD Coin",
+               symbol: "USDC",
+               decimals: 6,
+               coingecko_id: "usd-coin",
+               png:
+                 "https://raw.githubusercontent.com/cosmos/chain-registry/master/noble/images/USDCoin.png",
+               svg:
+                 "https://raw.githubusercontent.com/cosmos/chain-registry/master/noble/images/USDCoin.svg"
+             }
+           }
+  end
 end

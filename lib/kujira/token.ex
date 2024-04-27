@@ -9,7 +9,6 @@ defmodule Kujira.Token do
 
   @type t :: %__MODULE__{
           denom: String.t(),
-          decimals: integer(),
           trace: __MODULE__.Trace.t() | nil,
           meta: __MODULE__.Meta.t()
         }
@@ -27,19 +26,25 @@ defmodule Kujira.Token do
   end
 
   def from_denom(channel, "ibc/" <> hash) do
-    with {:ok, trace} <- __MODULE__.Trace.from_hash(channel, hash) do
-      {:ok,
-       %__MODULE__{denom: "ibc/#{hash}", decimals: 6, trace: trace}
-       |> set_meta()}
+    with {:ok, trace} <- __MODULE__.Trace.from_hash(channel, hash),
+         token = %__MODULE__{denom: "ibc/#{hash}", trace: trace},
+         {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
+      {:ok, %__MODULE__{token | meta: meta}}
     end
   end
 
-  def from_denom(_, denom) do
-    {:ok, %__MODULE__{denom: denom, decimals: 6, trace: nil} |> set_meta()}
+  def from_denom(channel, denom) do
+    token = %__MODULE__{denom: denom, trace: nil}
+
+    with {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
+      {:ok, %__MODULE__{token | meta: meta}}
+    end
   end
 
   # No trace, local asset
-  def set_meta(token) do
-    %{token | meta: __MODULE__.Meta.from_token(token)}
+  def set_meta(channel, token) do
+    with {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
+      %{token | meta: meta}
+    end
   end
 end

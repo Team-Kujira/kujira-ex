@@ -35,7 +35,7 @@ defmodule Kujira.MixProject do
       {:decimal, "~> 2.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:grpc, "~> 0.5.0"},
-      {:kujira_proto, "~> 0.9.3"},
+      {:kujira_proto, "~> 0.9.4"},
       {:jason, "~> 1.2"},
       {:memoize, "~> 1.4"},
       {:websockex, "~> 0.4.3"},
