@@ -58,8 +58,8 @@ defmodule Kujira.Bow.Xyk do
           status: Status.t()
         }
 
-  @spec from_config(String.t(), map()) :: :error | {:ok, __MODULE__.t()}
-  def from_config(address, %{
+  @spec from_config(GRPC.Channel.t(), String.t(), map()) :: :error | {:ok, __MODULE__.t()}
+  def from_config(channel, address, %{
         "owner" => owner,
         "denoms" => [
           denom_base,
@@ -73,15 +73,18 @@ defmodule Kujira.Bow.Xyk do
         "intervals" => intervals,
         "fee" => fee
       }) do
-    with {fee, ""} <- Decimal.parse(fee) do
+    with {fee, ""} <- Decimal.parse(fee),
+         {:ok, token_base} <- Token.from_denom(channel, denom_base),
+         {:ok, token_quote} <- Token.from_denom(channel, denom_quote),
+         {:ok, token_lp} <- Token.from_denom(channel, "factory/#{address}/ulp") do
       {:ok,
        %__MODULE__{
          address: address,
          owner: owner,
          fin_pair: {Fin.Pair, fin_pair},
-         token_lp: %Token{denom: "factory/#{address}/ulp", decimals: 6},
-         token_base: Token.from_denom(denom_base),
-         token_quote: Token.from_denom(denom_quote),
+         token_lp: token_lp,
+         token_base: token_base,
+         token_quote: token_quote,
          decimal_delta: decimal_delta,
          price_precision: price_precision,
          intervals:

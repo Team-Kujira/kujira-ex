@@ -124,8 +124,8 @@ defmodule Kujira.Bow.Leverage do
           status: :not_loaded | Status.t()
         }
 
-  @spec from_config(String.t(), map()) :: :error | {:ok, __MODULE__.t()}
-  def from_config(address, %{
+  @spec from_config(GRPC.Channel.t(), String.t(), map()) :: :error | {:ok, __MODULE__.t()}
+  def from_config(channel, address, %{
         "owner" => owner,
         "bow_contract" => bow,
         "denoms" => [
@@ -150,21 +150,17 @@ defmodule Kujira.Bow.Leverage do
     with {full_liquidation_threshold, ""} <- Integer.parse(full_liquidation_threshold),
          {max_ltv, ""} <- Decimal.parse(max_ltv),
          {partial_liquidation_target, ""} <- Decimal.parse(partial_liquidation_target),
-         {borrow_fee, ""} <- Decimal.parse(borrow_fee) do
+         {borrow_fee, ""} <- Decimal.parse(borrow_fee),
+         {:ok, token_base} <- Token.from_denom(channel, denom_base),
+         {:ok, token_quote} <- Token.from_denom(channel, denom_quote) do
       {:ok,
        %__MODULE__{
          address: address,
          owner: owner,
          #  TODO: Figure out the polymorphism
          bow: {Bow.Xyk, bow},
-         token_base: %Token{
-           denom: denom_base,
-           decimals: decimals_base
-         },
-         token_quote: %Token{
-           denom: denom_quote,
-           decimals: decimals_quote
-         },
+         token_base: token_base,
+         token_quote: token_quote,
          oracle_base: oracle_base,
          oracle_quote: oracle_quote,
          ghost_vault_base: {Ghost.Vault, ghost_vault_base},

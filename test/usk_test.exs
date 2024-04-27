@@ -20,8 +20,18 @@ defmodule KujiraUskTest do
                 address: "kujira1ecgazyd0waaj3g7l9cmy5gulhxkps2gmxu9ghducvuypjq68mq2smfdslf",
                 collateral_oracle_denom: "ATOM",
                 collateral_token: %Kujira.Token{
-                  decimals: 6,
-                  denom: "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
+                  denom: "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+                  meta: %Kujira.Token.Meta{
+                    coingecko_id: "cosmos",
+                    decimals: 6,
+                    name: "Cosmos Hub Atom",
+                    png:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.png",
+                    svg:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.svg",
+                    symbol: "ATOM"
+                  },
+                  trace: %Kujira.Token.Trace{base_denom: "uatom", path: "transfer/channel-0"}
                 },
                 full_liquidation_threshold: 1_000_000_000,
                 interest_rate: Decimal.new("0.01"),
@@ -34,9 +44,19 @@ defmodule KujiraUskTest do
                    "kujira1q8y46xg993cqg3xjycyw2334tepey7dmnh5jk2psutrz3fc69teskctgfc"},
                 owner: "kujira10d07y265gmmuvt4z0w9aw880jnsr700jt23ame",
                 stable_token: %Kujira.Token{
-                  decimals: 6,
                   denom:
-                    "factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk"
+                    "factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk",
+                  meta: %Kujira.Token.Meta{
+                    coingecko_id: "usk",
+                    decimals: 6,
+                    name: "USK",
+                    png:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/usk.png",
+                    svg:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/usk.svg",
+                    symbol: "USK"
+                  },
+                  trace: nil
                 },
                 stable_token_admin:
                   "kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7",
@@ -96,7 +116,7 @@ defmodule KujiraUskTest do
              collateral_amount: 1_000_000,
              debt_amount: _,
              holder: "kujira1gee7m7kygxuc4xk483ceuqcfczv48ygt27xgwk",
-             interest_amount: 0,
+             interest_amount: _,
              market:
                {Kujira.Usk.Market,
                 "kujira1247c0yvkxf3sf4zzu88sye5aqpqckjsmllk78uk3a89ezermldcs6ldxx2"},

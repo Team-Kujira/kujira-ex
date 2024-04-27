@@ -16,22 +16,42 @@ defmodule KujiraGhostTest do
               %Ghost.Vault{
                 address: "kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf",
                 debt_token: %Kujira.Token{
-                  decimals: 6,
                   denom:
-                    "factory/kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf/udebt"
+                    "factory/kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf/udebt",
+                  meta: %Kujira.Token.Meta.Error{message: :chain_registry_entry_not_found},
+                  trace: nil
                 },
                 deposit_token: %Kujira.Token{
-                  decimals: 6,
                   denom:
-                    "factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk"
+                    "factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk",
+                  meta: %Kujira.Token.Meta{
+                    coingecko_id: "usk",
+                    decimals: 6,
+                    name: "USK",
+                    png:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/usk.png",
+                    svg:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/usk.svg",
+                    symbol: "USK"
+                  },
+                  trace: nil
                 },
                 markets: :not_loaded,
-                oracle_denom: {:static, Decimal.new(1)},
+                oracle_denom: {:static, Decimal.new("1")},
                 owner: "kujira1tsekaqv9vmem0zwskmf90gpf0twl6k57e8vdnq",
                 receipt_token: %Kujira.Token{
-                  decimals: 6,
                   denom:
-                    "factory/kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf/urcpt"
+                    "factory/kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf/urcpt",
+                  meta: %Kujira.Token.Meta{
+                    coingecko_id: nil,
+                    decimals: 6,
+                    name: "Ghost Vault USK",
+                    png:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/xusk.png",
+                    svg: nil,
+                    symbol: "xUSK"
+                  },
+                  trace: nil
                 },
                 status: :not_loaded
               }}
@@ -45,21 +65,43 @@ defmodule KujiraGhostTest do
               %Kujira.Ghost.Vault{
                 address: "kujira143fwcudwy0exd6zd3xyvqt2kae68ud6n8jqchufu7wdg5sryd4lqtlvvep",
                 debt_token: %Kujira.Token{
-                  decimals: 6,
                   denom:
-                    "factory/kujira143fwcudwy0exd6zd3xyvqt2kae68ud6n8jqchufu7wdg5sryd4lqtlvvep/udebt"
+                    "factory/kujira143fwcudwy0exd6zd3xyvqt2kae68ud6n8jqchufu7wdg5sryd4lqtlvvep/udebt",
+                  meta: %Kujira.Token.Meta.Error{message: :chain_registry_entry_not_found},
+                  trace: nil
                 },
                 deposit_token: %Kujira.Token{
-                  decimals: 6,
-                  denom: "ukuji"
+                  denom: "ukuji",
+                  meta: %Kujira.Token.Meta{
+                    coingecko_id: "kujira",
+                    decimals: 6,
+                    name: "Kujira",
+                    png:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/kuji.png",
+                    svg:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/kuji.svg",
+                    symbol: "KUJI"
+                  },
+                  trace: nil
                 },
                 markets: :not_loaded,
                 oracle_denom: {:live, "KUJI"},
                 owner: "kujira1tsekaqv9vmem0zwskmf90gpf0twl6k57e8vdnq",
                 receipt_token: %Kujira.Token{
-                  decimals: 6,
                   denom:
-                    "factory/kujira143fwcudwy0exd6zd3xyvqt2kae68ud6n8jqchufu7wdg5sryd4lqtlvvep/urcpt"
+                    "factory/kujira143fwcudwy0exd6zd3xyvqt2kae68ud6n8jqchufu7wdg5sryd4lqtlvvep/urcpt",
+                  meta: %Kujira.Token.Meta.Error{
+                    message: :chain_registry_entry_not_found
+                  }
+                  # meta: %Kujira.Token.Meta{
+                  #   coingecko_id: nil,
+                  #   decimals: 6,
+                  #   name: "Ghost Vault KUJI",
+                  #   png:
+                  #     "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/xkuji.png",
+                  #   svg: nil,
+                  #   symbol: "xKUJI"
+                  # }
                 },
                 status: :not_loaded
               }}
@@ -83,8 +125,18 @@ defmodule KujiraGhostTest do
                 borrow_fee: Decimal.new("0.002"),
                 collateral_oracle_denom: "KUJI",
                 collateral_token: %Kujira.Token{
-                  decimals: 6,
-                  denom: "ukuji"
+                  denom: "ukuji",
+                  meta: %Kujira.Token.Meta{
+                    coingecko_id: "kujira",
+                    decimals: 6,
+                    name: "Kujira",
+                    png:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/kuji.png",
+                    svg:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/kuji.svg",
+                    symbol: "KUJI"
+                  },
+                  trace: nil
                 },
                 full_liquidation_threshold: 1_000_000,
                 max_ltv: Decimal.new("0.5"),

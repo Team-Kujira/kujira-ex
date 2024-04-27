@@ -53,10 +53,11 @@ defmodule Kujira.Fin.Pair do
           book: :not_loaded | Book.t()
         }
 
-  @spec from_config(String.t(), map()) :: :error | {:ok, __MODULE__.t()}
+  @spec from_config(GRPC.Channel.t(), String.t(), map()) :: :error | {:ok, __MODULE__.t()}
   # Original KUJI-axlUSDC pair does not expose some values
 
   def from_config(
+        channel,
         "kujira14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sl4e867" = address,
         %{
           "owner" => owner,
@@ -66,13 +67,15 @@ defmodule Kujira.Fin.Pair do
         }
       ) do
     with {fee_taker, ""} <- Decimal.parse("0.0015"),
-         {fee_maker, ""} <- Decimal.parse("0.00075") do
+         {fee_maker, ""} <- Decimal.parse("0.00075"),
+         {:ok, token_base} <- Token.from_denom(channel, denom_base),
+         {:ok, token_quote} <- Token.from_denom(channel, denom_quote) do
       {:ok,
        %__MODULE__{
          address: address,
          owner: owner,
-         token_base: Token.from_denom(denom_base),
-         token_quote: Token.from_denom(denom_quote),
+         token_base: token_base,
+         token_quote: token_quote,
          price_precision: price_precision,
          decimal_delta: 0,
          is_bootstrapping: is_bootstrapping,
@@ -86,7 +89,7 @@ defmodule Kujira.Fin.Pair do
     end
   end
 
-  def from_config(address, %{
+  def from_config(channel, address, %{
         "owner" => owner,
         "denoms" => [denom_base, denom_quote],
         "price_precision" => %{"decimal_places" => price_precision},
@@ -96,13 +99,15 @@ defmodule Kujira.Fin.Pair do
         "fee_maker" => fee_maker
       }) do
     with {fee_taker, ""} <- Decimal.parse(fee_taker),
-         {fee_maker, ""} <- Decimal.parse(fee_maker) do
+         {fee_maker, ""} <- Decimal.parse(fee_maker),
+         {:ok, token_base} <- Token.from_denom(channel, denom_base),
+         {:ok, token_quote} <- Token.from_denom(channel, denom_quote) do
       {:ok,
        %__MODULE__{
          address: address,
          owner: owner,
-         token_base: Token.from_denom(denom_base),
-         token_quote: Token.from_denom(denom_quote),
+         token_base: token_base,
+         token_quote: token_quote,
          price_precision: price_precision,
          decimal_delta: decimal_delta,
          is_bootstrapping: is_bootstrapping,

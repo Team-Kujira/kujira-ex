@@ -94,8 +94,8 @@ defmodule Kujira.Usk.Market do
           status: :not_loaded | Status.t()
         }
 
-  @spec from_config(String.t(), map()) :: {:ok, __MODULE__.t()} | :error
-  def from_config(address, %{
+  @spec from_config(GRPC.Channel.t(), String.t(), map()) :: {:ok, __MODULE__.t()} | :error
+  def from_config(channel, address, %{
         "owner" => owner,
         "stable_denom" => stable_token,
         "stable_denom_admin" => stable_token_admin,
@@ -114,15 +114,17 @@ defmodule Kujira.Usk.Market do
          {max_ltv, ""} <- Decimal.parse(max_ltv),
          {interest_rate, ""} <- Decimal.parse(interest_rate),
          {mint_fee, ""} <- Decimal.parse(mint_fee),
-         {liquidation_ratio, ""} <- Decimal.parse(liquidation_ratio) do
+         {liquidation_ratio, ""} <- Decimal.parse(liquidation_ratio),
+         {:ok, stable_token} <- Token.from_denom(channel, stable_token),
+         {:ok, collateral_token} <- Token.from_denom(channel, collateral_denom) do
       {:ok,
        %__MODULE__{
          address: address,
          owner: owner,
-         stable_token: Token.from_denom(stable_token),
+         stable_token: stable_token,
          stable_token_admin: stable_token_admin,
          orca_queue: {Queue, orca_addr},
-         collateral_token: Token.from_denom(collateral_denom),
+         collateral_token: collateral_token,
          collateral_oracle_denom: collateral_oracle_denom,
          max_ltv: max_ltv,
          full_liquidation_threshold: full_liquidation_threshold,

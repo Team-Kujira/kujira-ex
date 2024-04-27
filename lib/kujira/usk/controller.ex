@@ -27,18 +27,20 @@ defmodule Kujira.Usk.Controller do
           permitted: list(String.t())
         }
 
-  @spec from_query(String.t(), map()) :: {:ok, __MODULE__.t()} | :error
-  def from_query(address, %{
+  @spec from_query(GRPC.Channel.t(), String.t(), map()) :: {:ok, __MODULE__.t()} | :error
+  def from_query(channel, address, %{
         "owner" => owner,
         "denom" => denom,
         "permitted" => permitted
       }) do
-    {:ok,
-     %__MODULE__{
-       address: address,
-       owner: owner,
-       token: Token.from_denom(denom),
-       permitted: permitted
-     }}
+    with {:ok, token} <- Token.from_denom(channel, denom) do
+      {:ok,
+       %__MODULE__{
+         address: address,
+         owner: owner,
+         token: token,
+         permitted: permitted
+       }}
+    end
   end
 end

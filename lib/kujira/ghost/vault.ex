@@ -215,8 +215,8 @@ defmodule Kujira.Ghost.Vault do
           status: :not_loaded | Status.t()
         }
 
-  @spec from_config(String.t(), map()) :: {:ok, __MODULE__.t()} | :error
-  def from_config(address, %{
+  @spec from_config(GRPC.Channel.t(), String.t(), map()) :: {:ok, __MODULE__.t()} | :error
+  def from_config(channel, address, %{
         "owner" => owner,
         "denom" => denom,
         "oracle" => oracle,
@@ -224,17 +224,21 @@ defmodule Kujira.Ghost.Vault do
         "receipt_denom" => receipt_denom,
         "debt_token_denom" => debt_token_denom
       }) do
-    {:ok,
-     %__MODULE__{
-       address: address,
-       owner: owner,
-       deposit_token: Token.from_denom(denom),
-       receipt_token: Token.from_denom(receipt_denom),
-       debt_token: Token.from_denom(debt_token_denom),
-       oracle_denom: parse_oracle(oracle),
-       markets: :not_loaded,
-       status: :not_loaded
-     }}
+    with {:ok, deposit_token} <- Token.from_denom(channel, denom),
+         {:ok, receipt_token} <- Token.from_denom(channel, receipt_denom),
+         {:ok, debt_token} <- Token.from_denom(channel, debt_token_denom) do
+      {:ok,
+       %__MODULE__{
+         address: address,
+         owner: owner,
+         deposit_token: deposit_token,
+         receipt_token: receipt_token,
+         debt_token: debt_token,
+         oracle_denom: parse_oracle(oracle),
+         markets: :not_loaded,
+         status: :not_loaded
+       }}
+    end
   end
 
   defp parse_oracle(%{"live" => live}), do: {:live, live}

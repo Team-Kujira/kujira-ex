@@ -174,13 +174,32 @@ defmodule KujiraOrcaTest do
                   }
                 ],
                 bid_token: %Kujira.Token{
-                  decimals: 6,
                   denom:
-                    "factory/kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf/urcpt"
+                    "factory/kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf/urcpt",
+                  meta: %Kujira.Token.Meta{
+                    coingecko_id: nil,
+                    decimals: 6,
+                    name: "Ghost Vault USK",
+                    png:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/xusk.png",
+                    svg: nil,
+                    symbol: "xUSK"
+                  },
+                  trace: nil
                 },
                 collateral_token: %Kujira.Token{
-                  decimals: 6,
-                  denom: "ukuji"
+                  denom: "ukuji",
+                  meta: %Kujira.Token.Meta{
+                    coingecko_id: "kujira",
+                    decimals: 6,
+                    name: "Kujira",
+                    png:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/kuji.png",
+                    svg:
+                      "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/kuji.svg",
+                    symbol: "KUJI"
+                  },
+                  trace: nil
                 },
                 liquidation_fee: Decimal.new("0.01"),
                 owner: "kujira1tsekaqv9vmem0zwskmf90gpf0twl6k57e8vdnq",

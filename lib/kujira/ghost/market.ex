@@ -91,8 +91,8 @@ defmodule Kujira.Ghost.Market do
           status: :not_loaded | Status.t()
         }
 
-  @spec from_config(String.t(), map()) :: {:ok, __MODULE__.t()} | :error
-  def from_config(address, %{
+  @spec from_config(GRPC.Channel.t(), String.t(), map()) :: {:ok, __MODULE__.t()} | :error
+  def from_config(channel, address, %{
         "owner" => owner,
         "vault_addr" => vault_addr,
         "orca_addr" => orca_addr,
@@ -106,14 +106,15 @@ defmodule Kujira.Ghost.Market do
     with {full_liquidation_threshold, ""} <- Integer.parse(full_liquidation_threshold),
          {max_ltv, ""} <- Decimal.parse(max_ltv),
          {borrow_fee, ""} <- Decimal.parse(borrow_fee),
-         {partial_liquidation_target, ""} <- Decimal.parse(partial_liquidation_target) do
+         {partial_liquidation_target, ""} <- Decimal.parse(partial_liquidation_target),
+         {:ok, collateral_token} <- Token.from_denom(channel, collateral_denom) do
       {:ok,
        %__MODULE__{
          address: address,
          owner: owner,
          vault: {Vault, vault_addr},
          orca_queue: {Queue, orca_addr},
-         collateral_token: Token.from_denom(collateral_denom),
+         collateral_token: collateral_token,
          collateral_oracle_denom: collateral_oracle_denom,
          max_ltv: max_ltv,
          full_liquidation_threshold: full_liquidation_threshold,

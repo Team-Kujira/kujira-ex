@@ -99,21 +99,22 @@ defmodule Kujira.Fin.Book do
           | {:error, :insufficient_liquidity, __MODULE__.t()}
 
   def simulate_market_order(
-        %__MODULE__{asks: [%{price: price, total: total} | asks]} = book,
-        amount,
+        # %__MODULE__{asks: [%{price: price, total: total} | asks]} = book,
+        _book,
+        _amount,
         :buy
       ) do
-    max_return = Decimal.mult(price, total)
+    # max_return = Decimal.mult(price, total)
 
-    if max_return > amount do
-      remaining = max(0, amount - max_return)
-      simulate_market_order(%{book | asks: asks}, remaining, :buy)
-    else
-      consumed = Decimal.div(amount, price)
-      remaining = 0
-      # ask = %{ask | total: total - consumed}
-      # simulate_market_order(%{book | asks: [ask | asks]}, 0, :buy)
-    end
+    # if max_return > amount do
+    #   remaining = max(0, amount - max_return)
+    #   simulate_market_order(%{book | asks: asks}, remaining, :buy)
+    # else
+    #   consumed = Decimal.div(amount, price)
+    #   remaining = 0
+    #   # ask = %{ask | total: total - consumed}
+    #   # simulate_market_order(%{book | asks: [ask | asks]}, 0, :buy)
+    # end
   end
 
   def simulate_market_order(%__MODULE__{bids: bids}, amount, :sell) do

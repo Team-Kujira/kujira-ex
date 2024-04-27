@@ -5,7 +5,7 @@ defmodule Kujira.Token do
 
   use Memoize
 
-  defstruct [:denom, :decimals, :trace, :meta]
+  defstruct [:denom, :trace, :meta]
 
   @type t :: %__MODULE__{
           denom: String.t(),
@@ -21,8 +21,8 @@ defmodule Kujira.Token do
 
   @spec from_denom(GRPC.Channel.t(), String.t()) ::
           {:ok, Kujira.Token.t()} | {:error, GRPC.RPCError.t()}
-  def from_denom(%{"native" => denom}) do
-    from_denom(denom)
+  def from_denom(channel, %{"native" => denom}) do
+    from_denom(channel, denom)
   end
 
   def from_denom(channel, "ibc/" <> hash) do

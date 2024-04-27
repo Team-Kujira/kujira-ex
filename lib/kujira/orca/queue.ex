@@ -45,8 +45,8 @@ defmodule Kujira.Orca.Queue do
           withdrawal_fee: Decimal.t()
         }
 
-  @spec from_config(String.t(), map()) :: {:ok, __MODULE__.t()} | :error
-  def from_config(address, %{
+  @spec from_config(GRPC.Channel.t(), String.t(), map()) :: {:ok, __MODULE__.t()} | :error
+  def from_config(channel, address, %{
         "bid_denom" => bid_denom,
         "bid_threshold" => bid_threshold,
         "closed_slots" => _closed_slots,
@@ -63,13 +63,15 @@ defmodule Kujira.Orca.Queue do
     with {activation_threshold, ""} <- Integer.parse(bid_threshold),
          {liquidation_fee, ""} <- Decimal.parse(liquidation_fee),
          {premium_rate_per_slot, ""} <- Decimal.parse(premium_rate_per_slot),
-         {withdrawal_fee, ""} <- Decimal.parse(withdrawal_fee) do
+         {withdrawal_fee, ""} <- Decimal.parse(withdrawal_fee),
+         {:ok, collateral_token} <- Token.from_denom(channel, collateral_denom),
+         {:ok, bid_token} <- Token.from_denom(channel, bid_denom) do
       {:ok,
        %__MODULE__{
          address: address,
          owner: owner,
-         collateral_token: Token.from_denom(collateral_denom),
-         bid_token: Token.from_denom(bid_denom),
+         collateral_token: collateral_token,
+         bid_token: bid_token,
          bid_pools: [],
          activation_threshold: activation_threshold,
          activation_delay: waiting_period,

@@ -203,7 +203,7 @@ defmodule Kujira.Usk do
         with {:ok, [contract]} <- Contract.by_code(channel, @controller_code_id),
              {:ok, res} <-
                Contract.query_state_smart(channel, contract, %{status: %{}}),
-             {:ok, controller} <- Controller.from_query(contract, res) do
+             {:ok, controller} <- Controller.from_query(channel, contract, res) do
           {:ok, controller}
         else
           err -> err
