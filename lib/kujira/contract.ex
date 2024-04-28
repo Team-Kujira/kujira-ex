@@ -11,13 +11,34 @@ defmodule Kujira.Contract do
 
   @spec by_code(GRPC.Channel.t(), integer()) ::
           {:ok, list(String.t())} | {:error, GRPC.RPCError.t()}
-  def by_code(channel, code_id) do
-    with {:ok, %{contracts: contracts}} <-
+  def by_code(channel, code_id, next_key \\ nil)
+
+  def by_code(channel, code_id, nil) do
+    with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
            Stub.contracts_by_code(
              channel,
              QueryContractsByCodeRequest.new(code_id: code_id)
-           ) do
-      {:ok, contracts}
+           ),
+         {:ok, next} <- by_code(channel, code_id, next_key) do
+      {:ok, Enum.concat(contracts, next)}
+    end
+  end
+
+  def by_code(_channel, _code_id, "") do
+    {:ok, []}
+  end
+
+  def by_code(channel, code_id, key) do
+    with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
+           Stub.contracts_by_code(
+             channel,
+             QueryContractsByCodeRequest.new(
+               code_id: code_id,
+               pagination: PageRequest.new(key: key)
+             )
+           ),
+         {:ok, next} <- by_code(channel, code_id, next_key) do
+      {:ok, Enum.concat(contracts, next)}
     end
   end
 

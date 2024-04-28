@@ -8,6 +8,6 @@ defmodule KujiraFinTest do
   test "fetches all pairs", %{channel: channel} do
     {:ok, pairs} = Fin.list_pairs(channel)
     [%Fin.Pair{} | _] = pairs
-    assert Enum.count(pairs) > 10
+    assert Enum.count(pairs) > 100
   end
 end
