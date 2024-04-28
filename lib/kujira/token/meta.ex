@@ -1,16 +1,16 @@
 defmodule Kujira.Token.Meta do
   defmodule Error do
-    defstruct [:message]
+    defstruct [:error]
 
     @type t :: %__MODULE__{
-            message:
+            error:
               :denom_unit_not_found
               | :chain_registry_entry_not_found
               # If the token is an IBC token with multiple hops, we don't try and trace it back
               | :indirect
           }
 
-    def new(message), do: %__MODULE__{message: message}
+    def new(error), do: %__MODULE__{error: error}
   end
 
   @moduledoc """
