@@ -15,7 +15,7 @@ defmodule Kujira.Invalidation do
 end
 
 defprotocol Kujira.Invalidate do
-  @moduledoc"""
+  @moduledoc """
   Specification for a module to be registered with Kujira.Invalidator
 
   N.B: This is blocked until the upgrade to Cosmos SDK 0.50, an the associated upgrade to Cometbft 0.38. Currently BlockResult is unavailable over gRPC and so block events can't be scanned for required invalidations
