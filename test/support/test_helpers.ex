@@ -16,6 +16,13 @@ defmodule Kujira.TestHelpers do
         |> Base.decode64!()
         |> Cosmos.Tx.V1beta1.GetTxResponse.decode()
       end
+
+      def load_block(height) do
+        "./test/support/mocks/block/#{height}"
+        |> File.read!()
+        |> Base.decode64!()
+        |> Cosmos.Base.Tendermint.V1beta1.GetBlockByHeightResponse.decode()
+      end
     end
   end
 end

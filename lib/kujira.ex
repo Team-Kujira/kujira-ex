@@ -8,6 +8,7 @@ defmodule Kujira do
   alias Cosmos.Tx.V1beta1.GetTxsEventResponse
   alias Cosmos.Base.Query.V1beta1.PageRequest
   alias Cosmos.Tx.V1beta1.OrderBy
+  alias Cosmos.Tx.V1beta1.Tx
 
   @doc """
   Get transactions where the sender is `address`
@@ -42,20 +43,21 @@ defmodule Kujira do
     )
   end
 
-  @doc"""
+  @doc """
   Decodes an Any (eg sdk.Tx, PubKey etc to the Elixir defined type)
   """
-  def decode(%Google.Protobuf.Any{
-    type_url: type_url,
-    value: value
-  }) do
+  def decode_any(%Google.Protobuf.Any{
+        type_url: type_url,
+        value: value
+      }) do
     module = to_module(type_url)
     module.decode(value)
   end
 
   defp to_module("/" <> type_url) do
-    parts = type_url
-      |> String.split( ".")
+    parts =
+      type_url
+      |> String.split(".")
       |> Enum.map(&capitalize/1)
       |> Enum.join(".")
 
@@ -63,7 +65,26 @@ defmodule Kujira do
   end
 
   defp capitalize(string) do
-    with <<c :: utf8, rest :: binary>> <- string,
-      do: String.upcase(<<c>>) <> rest
+    with <<c::utf8, rest::binary>> <- string,
+         do: String.upcase(<<c>>) <> rest
+  end
+
+  def tx_hash(%Tx{} = tx) do
+    tx_hash(Tx.encode(tx))
+  end
+
+  def tx_hash(bytes) do
+    Base.encode16(:crypto.hash(:sha256, bytes))
+  end
+
+  def decode_tx(tx) do
+    with {:ok, json} <- Jason.decode(tx) do
+      json
+    else
+      {:error, _} ->
+        %Tx{body: %{messages: messages} = body} = tx = Tx.decode(tx)
+
+        %{tx | body: %{body | messages: Enum.map(messages, &decode_any/1)}}
+    end
   end
 end
