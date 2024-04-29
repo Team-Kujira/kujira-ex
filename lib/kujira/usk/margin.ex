@@ -21,12 +21,12 @@ defmodule Kujira.Usk.Margin do
           market: Market.t()
         }
 
-  @spec from_query(String.t(), map()) :: :error | {:ok, __MODULE__.t()}
-  def from_query(address, %{
+  @spec from_query(GRPC.Channel.t(), String.t(), map()) :: :error | {:ok, __MODULE__.t()}
+  def from_query(channel, address, %{
         "fin_address" => fin_address,
         "market" => market
       }) do
-    with {:ok, market} <- Market.from_config(address, market) do
+    with {:ok, market} <- Market.from_config(channel, address, market) do
       {:ok, %__MODULE__{fin_pair: {Kujira.Fin.Pair, fin_address}, market: market}}
     else
       _ ->
