@@ -53,6 +53,6 @@ defmodule KujiraBowTest do
         "kujira1vrwgc6j6ky6sk4a4x3axcm5fkddk88nqzrlsqkzsegledz58gm4su4exwx"
       )
 
-    {:ok, health} = Bow.load_orca_market(channel, market)
+    {:ok, _} = Bow.load_orca_market(channel, market)
   end
 end

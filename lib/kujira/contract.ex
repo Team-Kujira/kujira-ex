@@ -15,7 +15,7 @@ defmodule Kujira.Contract do
 
   def by_code(channel, code_id, nil) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :list, [code_id, nil]},
+      {__MODULE__, :by_code, [code_id, nil]},
       fn ->
         with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
                Stub.contracts_by_code(
@@ -35,17 +35,19 @@ defmodule Kujira.Contract do
 
   def by_code(channel, code_id, key) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :list, [code_id, key]},
-      with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
-             Stub.contracts_by_code(
-               channel,
-               QueryContractsByCodeRequest.new(
-                 code_id: code_id,
-                 pagination: PageRequest.new(key: key)
-               )
-             ),
-           {:ok, next} <- by_code(channel, code_id, next_key) do
-        {:ok, Enum.concat(contracts, next)}
+      {__MODULE__, :by_code, [code_id, key]},
+      fn ->
+        with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
+               Stub.contracts_by_code(
+                 channel,
+                 QueryContractsByCodeRequest.new(
+                   code_id: code_id,
+                   pagination: PageRequest.new(key: key)
+                 )
+               ),
+             {:ok, next} <- by_code(channel, code_id, next_key) do
+          {:ok, Enum.concat(contracts, next)}
+        end
       end
     )
   end
@@ -82,7 +84,7 @@ defmodule Kujira.Contract do
     with {:ok, contracts} <- by_codes(channel, code_ids),
          {:ok, struct} <-
            contracts
-           |> Task.async_stream(&get(channel, {module, &1}))
+           |> Task.async_stream(&get(channel, {module, &1}), timeout: 30_000)
            |> Enum.reduce({:ok, []}, fn
              {:ok, {:ok, x}}, {:ok, xs} ->
                {:ok, [x | xs]}

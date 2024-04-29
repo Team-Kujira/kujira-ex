@@ -82,7 +82,7 @@ defmodule Kujira.Orca do
           {:ok, list(Bid.t())} | {:error, GRPC.RPCError.t()}
   def load_bids(channel, queue, address, start_after \\ nil) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_bid, [queue, address, start_after]},
+      {__MODULE__, :load_bids, [queue, address, start_after]},
       fn ->
         with {:ok, %{"bids" => bids}} <-
                Contract.query_state_smart(channel, queue.address, %{

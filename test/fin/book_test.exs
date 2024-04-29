@@ -1,5 +1,5 @@
 defmodule KujiraFinBookTest do
-  alias Kujira.Fin.Book
+  # alias Kujira.Fin.Book
   use ExUnit.Case
   use Kujira.TestHelpers
 

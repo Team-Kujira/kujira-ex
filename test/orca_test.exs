@@ -229,7 +229,7 @@ defmodule KujiraOrcaTest do
     assert Enum.count(queues) > 10
   end
 
-  test "extracts a liquidation from a transaction", %{channel: channel} do
+  test "extracts a liquidation from a transaction", %{} do
     %{tx_response: response} =
       load_tx("E9262E61B7AB1E38F87AEFDDC895DDE62D398AAB3266FDEE7CE9D8893BAAED91")
 
