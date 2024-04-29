@@ -108,7 +108,7 @@ defmodule Kujira.Bow.Leverage do
   @type t :: %__MODULE__{
           address: String.t(),
           owner: String.t(),
-          bow: {Bow.Xyk, String.t()} | {Bow.Stable, String.t()},
+          bow: {Bow.Pool.Xyk, String.t()} | {Bow.Pool.Stable, String.t()},
           token_base: Token.t(),
           token_quote: Token.t(),
           oracle_base: String.t(),
@@ -158,7 +158,7 @@ defmodule Kujira.Bow.Leverage do
          address: address,
          owner: owner,
          #  TODO: Figure out the polymorphism
-         bow: {Bow.Xyk, bow},
+         bow: {Bow.Pool.Xyk, bow},
          token_base: token_base,
          token_quote: token_quote,
          oracle_base: oracle_base,

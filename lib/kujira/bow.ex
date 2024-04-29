@@ -4,17 +4,56 @@ defmodule Kujira.Bow do
   """
 
   alias Kujira.Bow.Leverage
-  alias Kujira.Bow.Lsd
-  alias Kujira.Bow.Stable
+  alias Kujira.Bow.Pool
+  alias Kujira.Bow.Pool.Lsd
+  alias Kujira.Bow.Pool.Stable
+  alias Kujira.Bow.Pool.Xyk
   alias Kujira.Bow.Status
-  alias Kujira.Bow.Xyk
   alias Kujira.Ghost
   alias Kujira.Contract
   import Cosmos.Bank.V1beta1.Query.Stub
   alias Cosmos.Bank.V1beta1.QuerySupplyOfRequest
 
+  @pool_code_ids Application.get_env(:kujira, __MODULE__,
+                   pool_code_ids: [
+                     54,
+                     126,
+                     294,
+                     # LSD Strategy
+                     158,
+                     167,
+                     # Stable Strategy
+                     161,
+                     166
+                   ]
+                 )
+                 |> Keyword.get(:pool_code_ids)
+
   @leverage_code_ids Application.get_env(:kujira, __MODULE__, leverage_code_ids: [188, 290])
                      |> Keyword.get(:leverage_code_ids)
+
+  @doc """
+  Fetches the Pool contract and its current config from the chain.
+
+  Config is very very rarely changed, if ever, and so this function is Memoized by default.
+
+  Manually clear with `Kujira.Bow.invalidate(:get_pool, address)`
+  """
+
+  @spec get_pool(Channel.t(), String.t()) :: {:ok, Pool.t()} | {:error, :not_found}
+  def get_pool(channel, address), do: Contract.get(channel, {Pool, address})
+
+  @doc """
+  Fetches all Pools. This will only change when config changes or new Pools are added.
+  It's Memoized, clearing every 24h.
+
+  Manually clear with `Kujira.Bow.invalidate(:list_pools)`
+  """
+
+  @spec list_pools(GRPC.Channel.t(), list(integer())) ::
+          {:ok, list(Pool.t())} | {:error, GRPC.RPCError.t()}
+  def list_pools(channel, code_ids \\ @pool_code_ids) when is_list(code_ids),
+    do: Contract.list(channel, Pool, code_ids)
 
   @doc """
   Fetches an XYK algorithm pool and its current config from the chain.

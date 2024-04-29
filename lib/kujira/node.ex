@@ -1,5 +1,5 @@
 defmodule Kujira.Node do
-  defmacro __using__(opts) do
+  defmacro __using__(opts \\ []) do
     pubsub = Keyword.get(opts, :pubsub, Kujira.PubSub)
 
     quote do

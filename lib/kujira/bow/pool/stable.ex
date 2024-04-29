@@ -1,6 +1,7 @@
-defmodule Kujira.Bow.Xyk do
+defmodule Kujira.Bow.Pool.Stable do
   @moduledoc """
-  A instance of the BOW XYK Market Making strategy.
+  A instance of the BOW Stable Market Making strategy.
+
 
   ## Fields
   * `:address` - The address of the contract
@@ -18,12 +19,6 @@ defmodule Kujira.Bow.Xyk do
   * `:decimal_delta` - Base decimals - Quote decimals. Used to assert correct price_precision
 
   * `:price_precision` - Maximum number of decimal places of the human price when submitting orders
-
-  * `:intervals` - The space between orders placed by the contract
-
-  * `:fee` - The premium calculated on top of the XY=K algorithm, used to size orders
-
-  * `:status` - The current deposit status
   """
 
   alias Kujira.Fin
@@ -39,8 +34,7 @@ defmodule Kujira.Bow.Xyk do
     :token_quote,
     :decimal_delta,
     :price_precision,
-    :intervals,
-    :fee,
+    :strategy,
     :status
   ]
 
@@ -53,12 +47,12 @@ defmodule Kujira.Bow.Xyk do
           token_quote: Token.t(),
           decimal_delta: integer(),
           price_precision: integer(),
-          intervals: [Decimal.t()],
-          fee: Decimal.t(),
+          strategy: __MODULE__.Strategy.t(),
           status: Status.t()
         }
 
-  @spec from_config(GRPC.Channel.t(), String.t(), map()) :: :error | {:ok, __MODULE__.t()}
+  @spec from_config(GRPC.Channel.t(), String.t(), map()) ::
+          {:error, GRPC.RPCError.t()} | {:error, :invalid_config} | {:ok, __MODULE__.t()}
   def from_config(channel, address, %{
         "owner" => owner,
         "denoms" => [
@@ -70,13 +64,12 @@ defmodule Kujira.Bow.Xyk do
         },
         "decimal_delta" => decimal_delta,
         "fin_contract" => fin_pair,
-        "intervals" => intervals,
-        "fee" => fee
+        "strategy" => strategy
       }) do
-    with {fee, ""} <- Decimal.parse(fee),
-         {:ok, token_base} <- Token.from_denom(channel, denom_base),
+    with {:ok, token_base} <- Token.from_denom(channel, denom_base),
          {:ok, token_quote} <- Token.from_denom(channel, denom_quote),
-         {:ok, token_lp} <- Token.from_denom(channel, "factory/#{address}/ulp") do
+         {:ok, token_lp} <- Token.from_denom(channel, "factory/#{address}/ulp"),
+         {:ok, strategy} <- __MODULE__.Strategy.from_config(strategy) do
       {:ok,
        %__MODULE__{
          address: address,
@@ -87,19 +80,14 @@ defmodule Kujira.Bow.Xyk do
          token_quote: token_quote,
          decimal_delta: decimal_delta,
          price_precision: price_precision,
-         intervals:
-           Enum.reduce(intervals, [], fn x, agg ->
-             case Decimal.parse(x) do
-               {i, ""} -> [i | agg]
-               _ -> agg
-             end
-           end),
-         fee: fee,
+         strategy: strategy,
          status: :not_loaded
        }}
     else
-      _ ->
-        :error
+      err ->
+        err
     end
   end
+
+  def from_config(_, _, _), do: {:error, :invalid_config}
 end
