@@ -18,7 +18,7 @@ defmodule KujiraGhostTest do
                 debt_token: %Kujira.Token{
                   denom:
                     "factory/kujira1w4yaama77v53fp0f9343t9w2f932z526vj970n2jv5055a7gt92sxgwypf/udebt",
-                  meta: %Kujira.Token.Meta.Error{message: :chain_registry_entry_not_found},
+                  meta: %Kujira.Token.Meta.Error{error: :chain_registry_entry_not_found},
                   trace: nil
                 },
                 deposit_token: %Kujira.Token{
@@ -67,7 +67,7 @@ defmodule KujiraGhostTest do
                 debt_token: %Kujira.Token{
                   denom:
                     "factory/kujira143fwcudwy0exd6zd3xyvqt2kae68ud6n8jqchufu7wdg5sryd4lqtlvvep/udebt",
-                  meta: %Kujira.Token.Meta.Error{message: :chain_registry_entry_not_found},
+                  meta: %Kujira.Token.Meta.Error{error: :chain_registry_entry_not_found},
                   trace: nil
                 },
                 deposit_token: %Kujira.Token{
@@ -91,7 +91,7 @@ defmodule KujiraGhostTest do
                   denom:
                     "factory/kujira143fwcudwy0exd6zd3xyvqt2kae68ud6n8jqchufu7wdg5sryd4lqtlvvep/urcpt",
                   meta: %Kujira.Token.Meta.Error{
-                    message: :chain_registry_entry_not_found
+                    error: :chain_registry_entry_not_found
                   }
                   # meta: %Kujira.Token.Meta{
                   #   coingecko_id: nil,
