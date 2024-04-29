@@ -2,6 +2,18 @@ defmodule Kujira.Invalidator do
   @moduledoc """
   A process that Kujira.Node runs, subscribed to new blocks and exceuting cache invalidations for all registered modules
   """
+
+  defp execute(invalidations) do
+    for i <- invalidations do
+      case i do
+        %{arguments: nil} ->
+          Memoize.invalidate(i.module, i.function)
+
+        i ->
+          Memoize.invalidate(i.module, i.function, i.arguments)
+      end
+    end
+  end
 end
 
 defmodule Kujira.Invalidation do
@@ -9,9 +21,9 @@ defmodule Kujira.Invalidation do
   An invalidation requested by `Kujira.Invalidate.invalidations/1`
   """
 
-  defstruct [:module, :args]
+  defstruct [:module, :function, :args]
 
-  @type t :: %__MODULE__{module: module(), args: [any()]}
+  @type t :: %__MODULE__{module: module(), function: atom(), args: [any()] | nil}
 end
 
 defprotocol Kujira.Invalidate do
