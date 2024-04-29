@@ -100,7 +100,7 @@ defmodule Kujira.Token.Meta do
              channel,
              QueryChannelClientStateRequest.new(port_id: "transfer", channel_id: channel_id)
            ),
-         %ClientState{chain_id: chain_id} <- Kujira.decode(client_state) do
+         %ClientState{chain_id: chain_id} <- Kujira.decode_any(client_state) do
       {:ok, chain_id}
     end
   end

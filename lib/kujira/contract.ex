@@ -11,45 +11,44 @@ defmodule Kujira.Contract do
 
   @spec by_code(GRPC.Channel.t(), integer()) ::
           {:ok, list(String.t())} | {:error, GRPC.RPCError.t()}
-  def by_code(channel, code_id, next_key \\ nil)
-
-  def by_code(channel, code_id, nil) do
+  def by_code(channel, code_id) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :by_code, [code_id, nil]},
+      {__MODULE__, :by_code, [code_id]},
       fn ->
-        with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
-               Stub.contracts_by_code(
-                 channel,
-                 QueryContractsByCodeRequest.new(code_id: code_id)
-               ),
-             {:ok, next} <- by_code(channel, code_id, next_key) do
-          {:ok, Enum.concat(contracts, next)}
-        end
+        by_code_page(channel, code_id)
       end
     )
   end
 
-  def by_code(_channel, _code_id, "") do
+  defp by_code_page(channel, code_id, key \\ nil)
+
+  defp by_code_page(channel, code_id, nil) do
+    with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
+           Stub.contracts_by_code(
+             channel,
+             QueryContractsByCodeRequest.new(code_id: code_id)
+           ),
+         {:ok, next} <- by_code_page(channel, code_id, next_key) do
+      {:ok, Enum.concat(contracts, next)}
+    end
+  end
+
+  defp by_code_page(_channel, _code_id, "") do
     {:ok, []}
   end
 
-  def by_code(channel, code_id, key) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :by_code, [code_id, key]},
-      fn ->
-        with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
-               Stub.contracts_by_code(
-                 channel,
-                 QueryContractsByCodeRequest.new(
-                   code_id: code_id,
-                   pagination: PageRequest.new(key: key)
-                 )
-               ),
-             {:ok, next} <- by_code(channel, code_id, next_key) do
-          {:ok, Enum.concat(contracts, next)}
-        end
-      end
-    )
+  defp by_code_page(channel, code_id, key) do
+    with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
+           Stub.contracts_by_code(
+             channel,
+             QueryContractsByCodeRequest.new(
+               code_id: code_id,
+               pagination: PageRequest.new(key: key)
+             )
+           ),
+         {:ok, next} <- by_code_page(channel, code_id, next_key) do
+      {:ok, Enum.concat(contracts, next)}
+    end
   end
 
   @spec by_codes(GRPC.Channel.t(), list(integer())) ::

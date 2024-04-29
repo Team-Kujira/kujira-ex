@@ -35,6 +35,6 @@ defprotocol Kujira.Invalidate do
 
   alias Cosmos.Base.Tendermint.V1beta1.Block
 
-  @spec invalidations(Block.t()) :: Kujira.Invalidation.t()
+  @spec invalidations(Block.t()) :: [Kujira.Invalidation.t()]
   def invalidations(block)
 end

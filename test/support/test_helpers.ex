@@ -21,7 +21,7 @@ defmodule Kujira.TestHelpers do
         "./test/support/mocks/block/#{height}"
         |> File.read!()
         |> Base.decode64!()
-        |> Cosmos.Base.Tendermint.V1beta1.GetBlockByHeightResponse.decode()
+        |> Cosmos.Base.Tendermint.V1beta1.Block.decode()
       end
     end
   end
