@@ -10,9 +10,7 @@ defmodule Kujira.Oracle do
   alias Kujira.Oracle.QueryExchangeRatesResponse
 
   @doc """
-  Loads the price for a specfic price from the on-chain oracle. Default cache 200ms
-
-  Clear wth Kujira.Oracle.invalidate(:load_price, denom)
+  Loads the price for a specfic price from the on-chain oracle
   """
   @spec load_price(GRPC.Channel.t(), any()) :: {:ok, Decimal.t()} | {:error, GRPC.RPCError.t()}
   def load_price(channel, denom) do
@@ -26,15 +24,12 @@ defmodule Kujira.Oracle do
         else
           err -> err
         end
-      end,
-      expires_in: 200
+      end
     )
   end
 
   @doc """
-  Loads all prices from the on-chain oracle. Default cache 200ms
-
-  Clear wth Kujira.Oracle.invalidate(:load_prices)
+  Loads all prices from the on-chain oracle
   """
   @spec load_prices(GRPC.Channel.t()) :: {:ok, map()} | {:error, GRPC.RPCError.t()}
   def load_prices(channel) do
@@ -61,14 +56,7 @@ defmodule Kujira.Oracle do
         else
           err -> err
         end
-      end,
-      expires_in: 200
+      end
     )
   end
-
-  def invalidate(:load_price),
-    do: Memoize.invalidate(__MODULE__, :load_price, [])
-
-  def invalidate(:load_prices, denom),
-    do: Memoize.invalidate(__MODULE__, :load_prices, [denom])
 end

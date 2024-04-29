@@ -33,21 +33,14 @@ defmodule Kujira.Bow do
                      |> Keyword.get(:leverage_code_ids)
 
   @doc """
-  Fetches the Pool contract and its current config from the chain.
-
-  Config is very very rarely changed, if ever, and so this function is Memoized by default.
-
-  Manually clear with `Kujira.Bow.invalidate(:get_pool, address)`
+  Fetches the Pool contract and its current config from the chain
   """
 
   @spec get_pool(Channel.t(), String.t()) :: {:ok, Pool.t()} | {:error, :not_found}
   def get_pool(channel, address), do: Contract.get(channel, {Pool, address})
 
   @doc """
-  Fetches all Pools. This will only change when config changes or new Pools are added.
-  It's Memoized, clearing every 24h.
-
-  Manually clear with `Kujira.Bow.invalidate(:list_pools)`
+  Fetches all Pools
   """
 
   @spec list_pools(GRPC.Channel.t(), list(integer())) ::
@@ -56,22 +49,7 @@ defmodule Kujira.Bow do
     do: Contract.list(channel, Pool, code_ids)
 
   @doc """
-  Fetches an XYK algorithm pool and its current config from the chain.
-
-  Config is very very rarely changed, if ever, and so this function is Memoized by default.
-
-  Manually clear with `Kujira.Bow.invalidate(:get_pool_xyk, address)`
-  """
-
-  @spec get_pool_xyk(Channel.t(), String.t()) :: {:ok, Leverage.t()} | {:error, :not_found}
-  def get_pool_xyk(channel, address), do: Contract.get(channel, {Xyk, address})
-
-  @doc """
   Loads the current pool status onto the pool
-
-  It's Memoized, clearing every 2 seconds.
-
-  Manually clear with `Kujira.Bow.invalidate(:load_pool, address)`
   """
 
   @spec load_pool(Channel.t(), Xyk.t()) :: {:ok, Xyk.t()} | {:error, :not_found}
@@ -89,27 +67,19 @@ defmodule Kujira.Bow do
         else
           err -> err
         end
-      end,
-      expires_in: 2000
+      end
     )
   end
 
   @doc """
-  Fetches the Leverage contract and its current config from the chain.
-
-  Config is very very rarely changed, if ever, and so this function is Memoized by default.
-
-  Manually clear with `Kujira.Bow.invalidate(:get_leverage, address)`
+  Fetches the Leverage contract and its current config from the chain
   """
 
   @spec get_leverage(Channel.t(), String.t()) :: {:ok, Leverage.t()} | {:error, :not_found}
   def get_leverage(channel, address), do: Contract.get(channel, {Leverage, address})
 
   @doc """
-  Fetches all Leverage markets. This will only change when config changes or new markets are added.
-  It's Memoized, clearing every 24h.
-
-  Manually clear with `Kujira.Bow.invalidate(:list_leverage)`
+  Fetches all Leverage markets
   """
 
   @spec list_leverage(GRPC.Channel.t(), list(integer())) ::
@@ -138,11 +108,6 @@ defmodule Kujira.Bow do
   I deposit 100 USDC, 75 KUJI and borrow 100 USDC and 25 KUJI
   Max LTV 0.8 liquidation can ocurr when LP value is 125 KUJI
   So there'll be 62.5 KUJI and 62.5 * Y = 20000 so 320 USDC and the price is 5.12
-
-
-
-
-  Manually clear with `Kujira.Bow.invalidate(:load_orca_market, market)`
   """
   @spec load_orca_market(Channel.t(), Leverage.t(), integer() | nil) ::
           {:ok, Kujira.Orca.Market.t()} | {:error, GRPC.RPCError.t()}

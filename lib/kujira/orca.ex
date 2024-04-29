@@ -13,21 +13,14 @@ defmodule Kujira.Orca do
             |> Keyword.get(:code_ids)
 
   @doc """
-  Fetches the Queue contract and its current config from the chain.
-
-  Config is very very rarely changed, if ever, and so this function is Memoized forever by default.
-
-  Manually clear with `Kujira.Orca.invalidate(:get_queue, address)`
+  Fetches the Queue contract and its current config from the chain
   """
 
   @spec get_queue(Channel.t(), String.t()) :: {:ok, Queue.t()} | {:error, :not_found}
   def get_queue(channel, address), do: Contract.get(channel, {Queue, address})
 
   @doc """
-  Fetches all Liquidation Queues. This will only change when config changes or new Queues are added.
-  It's Memoized, clearing every 24h.
-
-  Manually clear with `Kujira.Orca.invalidate(:list_queues)`
+  Fetches all Liquidation Queues
   """
 
   @spec list_queues(GRPC.Channel.t(), list(integer())) ::
@@ -36,9 +29,7 @@ defmodule Kujira.Orca do
     do: Contract.list(channel, Queue, code_ids)
 
   @doc """
-  Loads the current contract state into the Queue; the totals of each bid pool. Default Memoization to ~ block time / 2 = 2s
-
-  Manually clear with `Kujira.Orca.invalidate(:load_queue, queue)`
+  Loads the current contract state into the Queue; the totals of each bid pool
   """
 
   @spec load_queue(Channel.t(), Queue.t()) :: {:ok, Queue.t()} | {:error, GRPC.RPCError.t()}
@@ -52,15 +43,12 @@ defmodule Kujira.Orca do
         else
           err -> err
         end
-      end,
-      expires_in: 2000
+      end
     )
   end
 
   @doc """
-  Loads a bid for a specific Queue. Default Memoization to ~ block time / 2 = 2s
-
-  Manually clear with `Kujira.Orca.invalidate(:load_bid, queue, idx)`
+  Loads a bid for a specific Queue
   """
   @spec load_bid(Channel.t(), Queue.t(), String.t()) ::
           {:ok, Bid.t()} | {:error, :not_found} | {:error, GRPC.RPCError.t()}
@@ -83,15 +71,12 @@ defmodule Kujira.Orca do
           err ->
             err
         end
-      end,
-      expires_in: 2000
+      end
     )
   end
 
   @doc """
-  Loads a user's bids for a specific Queue. Default Memoization to ~ block time / 2 = 2s
-
-  Manually clear with `Kujira.Orca.invalidate(:load_bids, queue, address)`
+  Loads a user's bids for a specific Queue
   """
   @spec load_bids(Channel.t(), Queue.t(), String.t()) ::
           {:ok, list(Bid.t())} | {:error, GRPC.RPCError.t()}
@@ -109,8 +94,7 @@ defmodule Kujira.Orca do
         else
           err -> err
         end
-      end,
-      expires_in: 2000
+      end
     )
   end
 
@@ -125,28 +109,4 @@ defmodule Kujira.Orca do
     |> Stream.map(&Bid.from_query(queue, &1))
     |> Stream.filter(&(not is_nil(&1)))
   end
-
-  def invalidate(:list_queues),
-    do: Memoize.invalidate(Kujira.Contract, :list, [Queue, @code_ids])
-
-  def invalidate(:get_queue, address),
-    do: Memoize.invalidate(Kujira.Contract, :get, [{Queue, address}])
-
-  def invalidate(:list_queues, code_ids),
-    do: Memoize.invalidate(Kujira.Contract, :list, [Queue, code_ids])
-
-  def invalidate(:load_queue, queue),
-    do: Memoize.invalidate(__MODULE__, :load_queue, [queue, 100])
-
-  def invalidate(:load_queue, queue, limit),
-    do: Memoize.invalidate(__MODULE__, :load_queue, [queue, limit])
-
-  def invalidate(:load_bid, queue, idx),
-    do: Memoize.invalidate(__MODULE__, :load_bid, [queue, idx])
-
-  def invalidate(:load_bids, queue, address),
-    do: Memoize.invalidate(__MODULE__, :load_bids, [queue, address, nil])
-
-  def invalidate(:load_bids, queue, address, start_after),
-    do: Memoize.invalidate(__MODULE__, :load_bids, [queue, address, start_after])
 end

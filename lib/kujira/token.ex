@@ -21,11 +21,11 @@ defmodule Kujira.Token do
 
   @spec from_denom(GRPC.Channel.t(), String.t()) ::
           {:ok, Kujira.Token.t()} | {:error, GRPC.RPCError.t()}
-  def from_denom(channel, %{"native" => denom}) do
+  defmemo from_denom(channel, %{"native" => denom}) do
     from_denom(channel, denom)
   end
 
-  def from_denom(channel, "ibc/" <> hash) do
+  defmemo from_denom(channel, "ibc/" <> hash) do
     with {:ok, trace} <- __MODULE__.Trace.from_hash(channel, hash),
          token = %__MODULE__{denom: "ibc/#{hash}", trace: trace},
          {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
@@ -33,18 +33,11 @@ defmodule Kujira.Token do
     end
   end
 
-  def from_denom(channel, denom) do
+  defmemo from_denom(channel, denom) do
     token = %__MODULE__{denom: denom, trace: nil}
 
     with {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
       {:ok, %__MODULE__{token | meta: meta}}
-    end
-  end
-
-  # No trace, local asset
-  def set_meta(channel, token) do
-    with {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
-      %{token | meta: meta}
     end
   end
 end

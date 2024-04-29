@@ -14,14 +14,19 @@ defmodule Kujira.Contract do
   def by_code(channel, code_id, next_key \\ nil)
 
   def by_code(channel, code_id, nil) do
-    with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
-           Stub.contracts_by_code(
-             channel,
-             QueryContractsByCodeRequest.new(code_id: code_id)
-           ),
-         {:ok, next} <- by_code(channel, code_id, next_key) do
-      {:ok, Enum.concat(contracts, next)}
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :list, [code_id, nil]},
+      fn ->
+        with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
+               Stub.contracts_by_code(
+                 channel,
+                 QueryContractsByCodeRequest.new(code_id: code_id)
+               ),
+             {:ok, next} <- by_code(channel, code_id, next_key) do
+          {:ok, Enum.concat(contracts, next)}
+        end
+      end
+    )
   end
 
   def by_code(_channel, _code_id, "") do
@@ -29,17 +34,20 @@ defmodule Kujira.Contract do
   end
 
   def by_code(channel, code_id, key) do
-    with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
-           Stub.contracts_by_code(
-             channel,
-             QueryContractsByCodeRequest.new(
-               code_id: code_id,
-               pagination: PageRequest.new(key: key)
-             )
-           ),
-         {:ok, next} <- by_code(channel, code_id, next_key) do
-      {:ok, Enum.concat(contracts, next)}
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :list, [code_id, key]},
+      with {:ok, %{contracts: contracts, pagination: %{next_key: next_key}}} <-
+             Stub.contracts_by_code(
+               channel,
+               QueryContractsByCodeRequest.new(
+                 code_id: code_id,
+                 pagination: PageRequest.new(key: key)
+               )
+             ),
+           {:ok, next} <- by_code(channel, code_id, next_key) do
+        {:ok, Enum.concat(contracts, next)}
+      end
+    )
   end
 
   @spec by_codes(GRPC.Channel.t(), list(integer())) ::
@@ -71,28 +79,22 @@ defmodule Kujira.Contract do
   @spec list(GRPC.Channel.t(), module(), list(integer())) ::
           {:ok, list(struct())} | {:error, GRPC.RPCError.t()}
   def list(channel, module, code_ids) when is_list(code_ids) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :list, [module, code_ids]},
-      fn ->
-        with {:ok, contracts} <- by_codes(channel, code_ids),
-             {:ok, struct} <-
-               contracts
-               |> Task.async_stream(&get(channel, {module, &1}))
-               |> Enum.reduce({:ok, []}, fn
-                 {:ok, {:ok, x}}, {:ok, xs} ->
-                   {:ok, [x | xs]}
+    with {:ok, contracts} <- by_codes(channel, code_ids),
+         {:ok, struct} <-
+           contracts
+           |> Task.async_stream(&get(channel, {module, &1}))
+           |> Enum.reduce({:ok, []}, fn
+             {:ok, {:ok, x}}, {:ok, xs} ->
+               {:ok, [x | xs]}
 
-                 _, err ->
-                   err
-               end) do
-          {:ok, struct}
-        else
-          err ->
-            err
-        end
-      end,
-      expires_in: 24 * 60 * 60 * 1000
-    )
+             _, err ->
+               err
+           end) do
+      {:ok, struct}
+    else
+      err ->
+        err
+    end
   end
 
   @spec query_state_smart(GRPC.Channel.t(), String.t(), map()) ::

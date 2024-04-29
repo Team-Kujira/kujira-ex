@@ -26,20 +26,14 @@ defmodule Kujira.Usk do
                    |> Keyword.get(:margin_code_ids)
 
   @doc """
-  Fetches the Market contract and its current config from the chain.
-
-  Config is very very rarely changed, if ever, and so this function is Memoized by default.
-  Manually clear with `Memoize.invalidate(Kujira.Contract, :get, [{Market, address}])`
+  Fetches the Market contract and its current config from the chain
   """
 
   @spec get_market(Channel.t(), String.t()) :: {:ok, Market.t()} | {:error, :not_found}
   def get_market(channel, address), do: Contract.get(channel, {Market, address})
 
   @doc """
-  Fetches all Markets. This will only change when config changes or new Markets are added.
-  It's Memoized, clearing every 24h.
-
-  Manually clear with `Memoize.invalidate(Kujira.Contract, :list, [Market, code_ids])`
+  Fetches all Markets
   """
 
   @spec list_markets(GRPC.Channel.t(), list(integer())) ::
@@ -48,9 +42,7 @@ defmodule Kujira.Usk do
     do: Contract.list(channel, Market, code_ids)
 
   @doc """
-  Loads the current Status into the Market. efault Memoization to ~ block time / 2 = 2s
-
-  Manually clear with `Kujira.Usk.invalidate(:load_market, address)`
+  Loads the current Status into the Market
   """
 
   @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | {:error, GRPC.RPCError.t()}
@@ -65,27 +57,19 @@ defmodule Kujira.Usk do
         else
           err -> err
         end
-      end,
-      expires_in: 2000
+      end
     )
   end
 
   @doc """
-  Fetches the Margin contract and its current config from the chain.
-
-  Config is very very rarely changed, if ever, and so this function is Memoized by default.
-
-  Manually clear with `Kujira.Usk.invalidate(:get_margin, address)`
+  Fetches the Margin contract and its current config from the chain
   """
 
   @spec get_margin(Channel.t(), String.t()) :: {:ok, Margin.t()} | {:error, :not_found}
   def get_margin(channel, address), do: Contract.get(channel, {Margin, address})
 
   @doc """
-  Fetches all Margins. This will only change when config changes or new Margins are added.
-  It's Memoized, clearing every 24h.
-
-  Manually clear with `Kujira.Usk.invalidate(:list_margins)`
+  Fetches all Margins
   """
 
   @spec list_margins(GRPC.Channel.t(), list(integer())) ::
@@ -94,9 +78,7 @@ defmodule Kujira.Usk do
     do: Contract.list(channel, Margin, code_ids)
 
   @doc """
-  Loads the current Status into the Margin.market. Default Memoization to ~ block time / 2 = 2s
-
-  Manually clear with `Kujira.Usk.invalidate(:load_margin, margin)`
+  Loads the current Status into the Margin.market
   """
   @spec load_margin(Channel.t(), Margin.t()) :: {:ok, Margin.t()} | {:error, GRPC.RPCError.t()}
   def load_margin(channel, margin) do
@@ -110,15 +92,12 @@ defmodule Kujira.Usk do
         else
           err -> err
         end
-      end,
-      expires_in: 2000
+      end
     )
   end
 
   @doc """
-  Loads a Position by borrower address. Default Memoization to ~ block time / 2 = 2s
-
-  Manually clear with `Kujira.Usk.invalidate(:load_position, market, borrower)`
+  Loads a Position by borrower address
   """
 
   @spec load_position(Channel.t(), Market.t(), String.t()) ::
@@ -136,8 +115,7 @@ defmodule Kujira.Usk do
         else
           err -> err
         end
-      end,
-      expires_in: 2000
+      end
     )
   end
 
@@ -146,8 +124,6 @@ defmodule Kujira.Usk do
 
   Can be used for both a Ghost.Market and Ghost.Margin.market, as they both use the same underlying
   state schema
-
-  Manually clear with `Kujira.Usk.invalidate(:load_orca_market, market)`
   """
   @spec load_orca_market(Channel.t(), Market.t(), integer() | nil) ::
           {:ok, Kujira.Orca.Market.t()} | {:error, GRPC.RPCError.t()}
@@ -188,11 +164,7 @@ defmodule Kujira.Usk do
   end
 
   @doc """
-  Fetches the Controller contract and its current config from the chain.
-
-  Config is very very rarely changed, if ever, and so this function is Memoized by default.
-
-  Manually clear with `Kujira.Usk.invalidate(:get_controller)`
+  Fetches the Controller contract and its current config from the chain
   """
 
   @spec get_controller(Channel.t()) :: {:ok, Controller.t()} | {:error, :not_found}
@@ -230,43 +202,4 @@ defmodule Kujira.Usk do
       _ -> true
     end)
   end
-
-  def invalidate(:get_controller),
-    do: Memoize.invalidate(Kujira.Contract, :list, [Margin, @margin_code_ids])
-
-  def invalidate(:list_margins),
-    do: Memoize.invalidate(Kujira.Contract, :list, [Margin, @margin_code_ids])
-
-  def invalidate(:list_markets),
-    do: Memoize.invalidate(Kujira.Contract, :list, [Market, @market_code_ids])
-
-  def invalidate(:get_margin, address),
-    do: Memoize.invalidate(Kujira.Contract, :get, [{Margin, address}])
-
-  def invalidate(:get_market, address),
-    do: Memoize.invalidate(Kujira.Contract, :get, [{Market, address}])
-
-  def invalidate(:list_margins, code_ids),
-    do: Memoize.invalidate(Kujira.Contract, :list, [Margin, code_ids])
-
-  def invalidate(:list_markets, code_ids),
-    do: Memoize.invalidate(Kujira.Contract, :list, [Market, code_ids])
-
-  def invalidate(:load_margin, margin),
-    do: Memoize.invalidate(__MODULE__, :load_margin, [margin, 100])
-
-  def invalidate(:load_market, market),
-    do: Memoize.invalidate(__MODULE__, :load_market, [market, 100])
-
-  def invalidate(:load_orca_market, market),
-    do: Memoize.invalidate(Kujira.Contract, :query_state_all, [market.address])
-
-  def invalidate(:load_margin, margin, limit),
-    do: Memoize.invalidate(__MODULE__, :load_margin, [margin, limit])
-
-  def invalidate(:load_market, market, limit),
-    do: Memoize.invalidate(__MODULE__, :load_market, [market, limit])
-
-  def invalidate(:load_position, market, position),
-    do: Memoize.invalidate(__MODULE__, :load_position, [market, position])
 end
