@@ -88,7 +88,6 @@ defmodule KujiraCoinTest do
         }
       }
       |> Coin.to_decimal()
-      |> IO.inspect()
 
     assert decimal == Decimal.from_float(6.5)
   end
