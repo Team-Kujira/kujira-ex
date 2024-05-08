@@ -38,11 +38,11 @@ defmodule Kujira.Token.Meta do
           | __MODULE__.Error.t()
 
   # Local token, fetch from kujira assetlist
-  @spec from_token(GRPC.Channel.t(), Kujira.Token.t()) :: Kujira.Token.Meta.t()
+  @spec from_token(GRPC.Channel.t(), Kujira.Token.t()) :: {:ok, Kujira.Token.Meta.t()}
   def from_token(_, %Token{denom: denom, trace: nil}) do
     with {:ok, res} <- ChainRegistry.chain_assets("kujira") do
       res
-      |> Map.get("assets")
+      |> Map.get("assets", [])
       |> Enum.find(&(&1["base"] == denom))
       |> from_chain_registry()
     end
@@ -94,14 +94,19 @@ defmodule Kujira.Token.Meta do
     {:ok, __MODULE__.Error.new(:chain_registry_entry_not_found)}
   end
 
-  defmemop get_counterparty_chain_id(channel, channel_id) do
-    with {:ok, %{identified_client_state: %{client_state: client_state}}} <-
-           channel_client_state(
-             channel,
-             QueryChannelClientStateRequest.new(port_id: "transfer", channel_id: channel_id)
-           ),
-         %ClientState{chain_id: chain_id} <- Kujira.decode_any(client_state) do
-      {:ok, chain_id}
-    end
+  defp get_counterparty_chain_id(channel, channel_id) do
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :get_counterparty_chain_id, [channel_id]},
+      fn ->
+        with {:ok, %{identified_client_state: %{client_state: client_state}}} <-
+               channel_client_state(
+                 channel,
+                 QueryChannelClientStateRequest.new(port_id: "transfer", channel_id: channel_id)
+               ),
+             %ClientState{chain_id: chain_id} <- Kujira.decode_any(client_state) do
+          {:ok, chain_id}
+        end
+      end
+    )
   end
 end

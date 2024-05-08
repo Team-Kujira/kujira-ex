@@ -70,4 +70,17 @@ defmodule KujiraTokenTest do
              }
            }
   end
+
+  test "an unknown IBC token", %{channel: channel} do
+    assert Token.from_denom(
+             channel,
+             "ibc/FE98AAD68F02F03565E9FA39A5E627946699B2B07115889ED812D8BA639576A8"
+           ) ==
+             {:error,
+              %GRPC.RPCError{
+                message:
+                  "FE98AAD68F02F03565E9FA39A5E627946699B2B07115889ED812D8BA639576A8: denomination trace not found",
+                status: 5
+              }}
+  end
 end

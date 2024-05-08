@@ -76,4 +76,20 @@ defmodule KujiraCoinTest do
 
     assert Enum.count(coins) == 118
   end
+
+  test "converts to human decimal correctly" do
+    decimal =
+      %Kujira.Coin{
+        amount: 6_500_000,
+        token: %Kujira.Token{
+          meta: %Kujira.Token.Meta{
+            decimals: 6
+          }
+        }
+      }
+      |> Coin.to_decimal()
+      |> IO.inspect()
+
+    assert decimal == Decimal.from_float(6.5)
+  end
 end

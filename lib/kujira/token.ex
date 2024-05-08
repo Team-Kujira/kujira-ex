@@ -25,19 +25,31 @@ defmodule Kujira.Token do
     from_denom(channel, denom)
   end
 
-  defmemo from_denom(channel, "ibc/" <> hash) do
-    with {:ok, trace} <- __MODULE__.Trace.from_hash(channel, hash),
-         token = %__MODULE__{denom: "ibc/#{hash}", trace: trace},
-         {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
-      {:ok, %__MODULE__{token | meta: meta}}
-    end
+  defmemo from_denom(channel, "ibc/" <> hash = denom) do
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :from_denom, [denom]},
+      fn ->
+        with {:ok, trace} <- __MODULE__.Trace.from_hash(channel, hash),
+             token = %__MODULE__{denom: "ibc/#{hash}", trace: trace},
+             {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
+          {:ok, %__MODULE__{token | meta: meta}}
+        end
+      end
+    )
   end
 
   defmemo from_denom(channel, denom) do
-    token = %__MODULE__{denom: denom, trace: nil}
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :from_denom, [denom]},
+      fn ->
+        token = %__MODULE__{denom: denom, trace: nil}
 
-    with {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
-      {:ok, %__MODULE__{token | meta: meta}}
-    end
+        with {:ok, meta} <- __MODULE__.Meta.from_token(channel, token) do
+          {:ok, %__MODULE__{token | meta: meta}}
+        else
+          err -> err
+        end
+      end
+    )
   end
 end

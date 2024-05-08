@@ -12,9 +12,14 @@ defmodule Kujira.Token.Trace do
   @type t :: %__MODULE__{base_denom: String.t(), path: String.t()}
 
   defmemo from_hash(channel, hash) do
-    with {:ok, %{denom_trace: trace}} <-
-           denom_trace(channel, QueryDenomTraceRequest.new(hash: hash)) do
-      {:ok, %__MODULE__{base_denom: trace.base_denom, path: trace.path}}
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :from_hash, [hash]},
+      fn ->
+        with {:ok, %{denom_trace: trace}} <-
+               denom_trace(channel, QueryDenomTraceRequest.new(hash: hash)) do
+          {:ok, %__MODULE__{base_denom: trace.base_denom, path: trace.path}}
+        end
+      end
+    )
   end
 end

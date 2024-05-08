@@ -87,4 +87,13 @@ defmodule Kujira.Coin do
   def normalize(coins) do
     Enum.sort_by(coins, & &1.token.denom)
   end
+
+  @doc """
+  Creates a Decimal with the human value of the `amount`
+  """
+  @spec to_decimal(Kujira.Coin.t()) :: Decimal.t()
+  def to_decimal(%__MODULE__{amount: amount, token: %{meta: %Token.Meta{decimals: decimals}}}) do
+    %Decimal{sign: 1, coef: amount, exp: -decimals}
+    |> Decimal.normalize()
+  end
 end
