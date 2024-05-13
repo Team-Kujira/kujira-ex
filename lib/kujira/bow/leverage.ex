@@ -131,12 +131,12 @@ defmodule Kujira.Bow.Leverage do
         "denoms" => [
           %{
             "denom" => denom_base,
-            "decimals" => decimals_base,
+            # "decimals" => decimals_base,
             "oracle" => oracle_base
           },
           %{
             "denom" => denom_quote,
-            "decimals" => decimals_quote,
+            # "decimals" => decimals_quote,
             "oracle" => oracle_quote
           }
         ],
@@ -157,8 +157,7 @@ defmodule Kujira.Bow.Leverage do
        %__MODULE__{
          address: address,
          owner: owner,
-         #  TODO: Figure out the polymorphism
-         bow: {Bow.Pool.Xyk, bow},
+         bow: {Bow.Pool, bow},
          token_base: token_base,
          token_quote: token_quote,
          oracle_base: oracle_base,
@@ -177,5 +176,91 @@ defmodule Kujira.Bow.Leverage do
       _ ->
         :error
     end
+  end
+
+  @doc """
+  Returns a tuple of {token, price, amount} of collateral at risk at the speciifc price point
+  """
+  @spec liquidation_price(
+          Bow.Leverage.t(),
+          Bow.Pool.t(),
+          Bow.Status.t(),
+          Kujira.Ghost.Vault.Status.t(),
+          Kujira.Ghost.Vault.Status.t(),
+          Decimal.t(),
+          Decimal.t(),
+          Decimal.t()
+        ) :: {Token.t(), Decimal.t(), integer()}
+  def liquidation_price(
+        %__MODULE__{
+          token_base: token_base,
+          token_quote: token_quote,
+          max_ltv: max_ltv
+        },
+        %Bow.Pool.Xyk{},
+        %Kujira.Bow.Status{} = pool_status,
+        %Ghost.Vault.Status{debt_ratio: base_debt_ratio},
+        %Ghost.Vault.Status{debt_ratio: quote_debt_ratio},
+        %Decimal{} = lp_amount,
+        %Decimal{} = debt_shares_base,
+        %Decimal{} = debt_shares_quote
+      ) do
+    debt_amount_base = Decimal.mult(debt_shares_base, base_debt_ratio)
+    debt_amount_quote = Decimal.mult(debt_shares_quote, quote_debt_ratio)
+
+    collateral_amount_base =
+      Decimal.div(lp_amount, pool_status.lp_amount)
+      |> Decimal.mult(pool_status.base_amount)
+
+    collateral_amount_quote =
+      Decimal.div(lp_amount, pool_status.lp_amount)
+      |> Decimal.mult(pool_status.quote_amount)
+
+    d = max_ltv |> Decimal.mult(collateral_amount_base) |> Decimal.sub(debt_amount_base)
+
+    liquidation_price =
+      Decimal.sub(debt_amount_quote, Decimal.mult(max_ltv, collateral_amount_quote))
+      |> Decimal.div(d)
+
+    # Unliquidatable
+    if Decimal.lt?(liquidation_price, 0) do
+      {token_base, Decimal.from_float(0.0), 0}
+    else
+      k = Decimal.mult(collateral_amount_base, collateral_amount_quote)
+      liquidation_collateral_base = k |> Decimal.div(liquidation_price) |> Decimal.sqrt()
+
+      liquidation_collateral_quote = Decimal.mult(liquidation_price, liquidation_collateral_base)
+
+      remaining_debt_base =
+        debt_amount_base |> Decimal.sub(liquidation_collateral_base) |> Decimal.max(0)
+
+      remaining_debt_quote =
+        debt_amount_quote |> Decimal.sub(liquidation_collateral_quote) |> Decimal.max(0)
+
+      # One of these two will be zero. Do a comparison to check
+      if Decimal.gt?(remaining_debt_quote, remaining_debt_base) do
+        # We still have quote assets to pay off, so the base asset is at-risk. Divide the quote debt by the price to get the base amount
+        {token_base, liquidation_price, Decimal.div(remaining_debt_quote, liquidation_price)}
+      else
+        {token_quote, liquidation_price, Decimal.mult(remaining_debt_base, liquidation_price)}
+      end
+    end
+  end
+
+  def liquidation_price(
+        %__MODULE__{
+          token_base: token_base
+        },
+        _,
+        %Bow.Status{},
+        %Ghost.Vault.Status{},
+        %Ghost.Vault.Status{},
+        %Decimal{},
+        %Decimal{},
+        %Decimal{}
+      ) do
+    # TODO: Determine whether liquidation price makes sense for a stable pool, as it's impossible to know the ratio of asset in the pool for a given price
+    # Perhaps we just naively put the total amount of each asset at the max ltv
+    {token_base, Decimal.from_float(0.0), 0}
   end
 end

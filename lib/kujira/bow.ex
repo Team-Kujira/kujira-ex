@@ -10,6 +10,7 @@ defmodule Kujira.Bow do
   alias Kujira.Bow.Pool.Xyk
   alias Kujira.Bow.Status
   alias Kujira.Ghost
+  alias Kujira.Token
   alias Kujira.Contract
   import Cosmos.Bank.V1beta1.Query.Stub
   alias Cosmos.Bank.V1beta1.QuerySupplyOfRequest
@@ -88,9 +89,9 @@ defmodule Kujira.Bow do
     do: Contract.list(channel, Leverage, code_ids)
 
   @doc """
-  **WIP**
+  Loads the Leverage Market into a format that Orca can consume for health reporting. Default Memoization to 10 mins.
 
-  Loads the Leverage Market into a format that Orca can consume for health reporting. Default Memoization to 10 mins
+  This returns a {base, quote} tuple that represents the risk on both sides of liquidation
 
   The liquidation price of a position is dependent on the algorithm of the BOW pool.
 
@@ -105,10 +106,12 @@ defmodule Kujira.Bow do
   At this price, we have ~ 1612 KUJI and 310 USDC as collateral. The USDC debt has a defecit of 190, which must be covered from the KUJI
   side of the collateral, so the at-risk collateral is 190 / 0.1923 ~= 988
   """
-  @spec load_orca_market(Channel.t(), Leverage.t(), integer() | nil) ::
-          {:ok, Kujira.Orca.Market.t()} | {:error, GRPC.RPCError.t()}
-  def load_orca_market(channel, market, precision \\ 3) do
+  @spec load_orca_markets(Channel.t(), Leverage.t(), integer() | nil) ::
+          {:ok, {Kujira.Orca.Market.t(), Kujira.Orca.Market.t()}} | {:error, GRPC.RPCError.t()}
+  def load_orca_markets(channel, market, precision \\ 3) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
+    base_denom = market.token_base.denom
+    quote_denom = market.token_quote.denom
 
     with {:ok, pool} <- Contract.get(channel, market.bow),
          {:ok, %{status: %Status{} = pool_status}} <- load_pool(channel, pool),
@@ -119,14 +122,13 @@ defmodule Kujira.Bow do
          {:ok, vault_quote} <- Contract.get(channel, market.ghost_vault_quote),
          {:ok, %{status: %Ghost.Vault.Status{} = vault_quote_status}} <-
            Kujira.Ghost.load_vault(channel, vault_quote) do
-      health =
+      {health_base, health_quote} =
         models
         |> Map.values()
         |> Enum.reduce(
-          %{},
-          fn model, agg ->
+          {%{}, %{}},
+          fn model, {health_base, health_quote} ->
             with %{
-                   #  "idx" => idx,
                    #  "holder" => holder,
                    "debt_shares" => [debt_shares_base, debt_shares_quote],
                    "lp_amount" => lp_amount
@@ -134,45 +136,50 @@ defmodule Kujira.Bow do
                  {debt_shares_base, ""} <- Decimal.parse(debt_shares_base),
                  {debt_shares_quote, ""} <- Decimal.parse(debt_shares_quote),
                  {lp_amount, ""} <- Decimal.parse(lp_amount) do
-              debt_amount_base = Decimal.mult(debt_shares_base, vault_base_status.debt_ratio)
-              debt_amount_quote = Decimal.mult(debt_shares_quote, vault_quote_status.debt_ratio)
+              case Leverage.liquidation_price(
+                     market,
+                     pool,
+                     pool_status,
+                     vault_base_status,
+                     vault_quote_status,
+                     lp_amount,
+                     debt_shares_base,
+                     debt_shares_quote
+                   ) do
+                {%Token{denom: ^base_denom}, price, amount} ->
+                  {
+                    Map.update(
+                      health_base,
+                      Decimal.round(price, precision),
+                      amount,
+                      &(&1 + amount)
+                    ),
+                    health_quote
+                  }
 
-              collateral_amount_base =
-                Decimal.div(lp_amount, pool_status.lp_amount)
-                |> Decimal.mult(pool_status.base_amount)
+                {%Token{denom: ^quote_denom}, price, amount} ->
+                  {
+                    health_base,
+                    Map.update(
+                      health_quote,
+                      Decimal.round(price, precision),
+                      amount,
+                      &(&1 + amount)
+                    )
+                  }
 
-              collateral_amount_quote =
-                Decimal.div(lp_amount, pool_status.lp_amount)
-                |> Decimal.mult(pool_status.quote_amount)
-
-              max_ltv = market.max_ltv
-
-              d = max_ltv |> Decimal.mult(collateral_amount_base) |> Decimal.sub(debt_amount_base)
-
-              liquidation_price =
-                Decimal.sub(debt_amount_quote, Decimal.mult(max_ltv, collateral_amount_quote))
-                |> Decimal.div(d)
-
-              k = Decimal.mult(collateral_amount_base, collateral_amount_quote)
-              liquidation_collateral_base = k |> Decimal.div(liquidation_price) |> Decimal.sqrt()
-
-              liquidation_collateral_quote =
-                Decimal.mult(liquidation_price, liquidation_collateral_base)
-
-              remaining_collateral_base =
-                liquidation_collateral_base |> Decimal.sub(debt_amount_base) |> Decimal.max(0)
-
-              remaining_collateral_quote =
-                liquidation_collateral_quote |> Decimal.sub(debt_amount_quote) |> Decimal.max(0)
-
-              agg
+                _ ->
+                  {health_base, health_quote}
+              end
             else
-              _ -> agg
+              _ -> {health_base, health_quote}
             end
           end
         )
 
-      {:ok, %Kujira.Orca.Market{address: market.address, health: health}}
+      {:ok,
+       {%Kujira.Orca.Market{address: market.address, health: health_base},
+        %Kujira.Orca.Market{address: market.address, health: health_quote}}}
     end
   end
 end

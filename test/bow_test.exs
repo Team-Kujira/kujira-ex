@@ -1,4 +1,5 @@
 defmodule KujiraBowTest do
+  alias Kujira.Orca
   alias Kujira.Bow
   use ExUnit.Case
   use Kujira.TestHelpers
@@ -47,12 +48,11 @@ defmodule KujiraBowTest do
   end
 
   test "loads leverage market health", %{channel: channel} do
-    {:ok, market} =
-      Bow.get_leverage(
-        channel,
-        "kujira1vrwgc6j6ky6sk4a4x3axcm5fkddk88nqzrlsqkzsegledz58gm4su4exwx"
-      )
+    {:ok, contracts} = Bow.list_leverage(channel)
 
-    {:ok, _} = Bow.load_orca_market(channel, market)
+    for %{address: address} <- contracts do
+      {:ok, market} = Bow.get_leverage(channel, address)
+      {:ok, {%Orca.Market{}, %Orca.Market{}}} = Bow.load_orca_markets(channel, market)
+    end
   end
 end
