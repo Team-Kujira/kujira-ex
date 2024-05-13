@@ -159,7 +159,12 @@ defmodule Kujira.Usk do
           end
         )
 
-      {:ok, %Kujira.Orca.Market{address: market.address, health: health}}
+      {:ok,
+       %Kujira.Orca.Market{
+         address: {Market, market.address},
+         queue: market.orca_queue,
+         health: health
+       }}
     end
   end
 

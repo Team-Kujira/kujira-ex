@@ -11,7 +11,7 @@ defmodule Kujira.Usk.Market do
 
   * `:stable_token_admin` - The admin address of the stable_token
 
-  * `:orca_address` - The address of the Orca Queue that is used to liquidate the collateral token
+  * `:orca_queue` - The address of the Orca Queue that is used to liquidate the collateral token
 
   * `:collateral_token` - The token used to back the loan
 
