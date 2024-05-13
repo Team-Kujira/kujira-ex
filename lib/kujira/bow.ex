@@ -94,20 +94,16 @@ defmodule Kujira.Bow do
 
   The liquidation price of a position is dependent on the algorithm of the BOW pool.
 
-  Eg: KUJI is at 2 USDC when a position is opened. The BOW pool is in a 1:2 ratio, and I deposit 100 KUJI and borrow 200 USDC.
-  My initial LTV is 0.5 - a total of $400 of LP tokens with $200 borrowed.
-  Say the max LTV is 0.8, then liquidation can ocurr when the LP value decreases to 250 USDC.
-  In this instance, as the ratio of the pool should be the current price, there will be 125 USDC and X * 125 = 20000 so 160 KUJI where the price is now 0.78125
+  The liquidation price of a leveraged position on an XYK pool is defined as (loan_b - (max_ltv * size_b)) / ((max_ltv * size_a) - loan_a)
 
-  The liquidation price if KUJI is the borrowed asset is the same deviation in the opposite direction
-  I deposit 200 USDC and borrow 100 KUJI
-  Max LTV 0.8 liquidation can ocurr when LP value is 125 KUJI
-  So there'll be 62.5 KUJI and 62.5 * Y = 20000 so 320 USDC and the price is 5.12
+  This will demonstrate that the closer loan_b / loan_a is to size_b / size_a (and therefore the current price of the asset),
+  the more extreme the price deviation required to reach max LTV. In some cases, eg when loan_b / loan_a == size_b / size_a, the value of the debt
+  tracks the value of the collateral exactly, and as such the loan cannot be liquidated through price movement
 
-  Blended liquidation price
-  I deposit 100 USDC, 75 KUJI and borrow 100 USDC and 25 KUJI
-  Max LTV 0.8 liquidation can ocurr when LP value is 125 KUJI
-  So there'll be 62.5 KUJI and 62.5 * Y = 20000 so 320 USDC and the price is 5.12
+  Finally, the at-risk collateral amount is determined as the net collateral amount required to be sold at the liquidation price
+  E.g. a position with 1000 KUJI and 500 USDC collateral, 100 KUJI and 500 USDC debt, has a liquidation price of 0.1923
+  At this price, we have ~ 1612 KUJI and 310 USDC as collateral. The USDC debt has a defecit of 190, which must be covered from the KUJI
+  side of the collateral, so the at-risk collateral is 190 / 0.1923 ~= 988
   """
   @spec load_orca_market(Channel.t(), Leverage.t(), integer() | nil) ::
           {:ok, Kujira.Orca.Market.t()} | {:error, GRPC.RPCError.t()}
@@ -123,10 +119,6 @@ defmodule Kujira.Bow do
          {:ok, vault_quote} <- Contract.get(channel, market.ghost_vault_quote),
          {:ok, %{status: %Ghost.Vault.Status{} = vault_quote_status}} <-
            Kujira.Ghost.load_vault(channel, vault_quote) do
-      # IO.inspect(pool)
-      # IO.inspect(vault_base)
-      # IO.inspect(vault_quote)
-
       health =
         models
         |> Map.values()
@@ -134,7 +126,7 @@ defmodule Kujira.Bow do
           %{},
           fn model, agg ->
             with %{
-                   # "idx" => idx,
+                   #  "idx" => idx,
                    #  "holder" => holder,
                    "debt_shares" => [debt_shares_base, debt_shares_quote],
                    "lp_amount" => lp_amount
@@ -144,8 +136,35 @@ defmodule Kujira.Bow do
                  {lp_amount, ""} <- Decimal.parse(lp_amount) do
               debt_amount_base = Decimal.mult(debt_shares_base, vault_base_status.debt_ratio)
               debt_amount_quote = Decimal.mult(debt_shares_quote, vault_quote_status.debt_ratio)
-              # IO.inspect({debt_amount_base, debt_amount_quote, lp_amount})
-              # Map.update(agg, liquidation_price, collateral_amount, &(&1 + collateral_amount))
+
+              collateral_amount_base =
+                Decimal.div(lp_amount, pool_status.lp_amount)
+                |> Decimal.mult(pool_status.base_amount)
+
+              collateral_amount_quote =
+                Decimal.div(lp_amount, pool_status.lp_amount)
+                |> Decimal.mult(pool_status.quote_amount)
+
+              max_ltv = market.max_ltv
+
+              d = max_ltv |> Decimal.mult(collateral_amount_base) |> Decimal.sub(debt_amount_base)
+
+              liquidation_price =
+                Decimal.sub(debt_amount_quote, Decimal.mult(max_ltv, collateral_amount_quote))
+                |> Decimal.div(d)
+
+              k = Decimal.mult(collateral_amount_base, collateral_amount_quote)
+              liquidation_collateral_base = k |> Decimal.div(liquidation_price) |> Decimal.sqrt()
+
+              liquidation_collateral_quote =
+                Decimal.mult(liquidation_price, liquidation_collateral_base)
+
+              remaining_collateral_base =
+                liquidation_collateral_base |> Decimal.sub(debt_amount_base) |> Decimal.max(0)
+
+              remaining_collateral_quote =
+                liquidation_collateral_quote |> Decimal.sub(debt_amount_quote) |> Decimal.max(0)
+
               agg
             else
               _ -> agg
