@@ -7,9 +7,9 @@ defmodule Kujira.Ghost.Market do
 
   * `:owner` - The owner of the market
 
-  * `:vault_address` - The address of Vault that the Market draws from
+  * `:vault` - The address of Vault that the Market draws from
 
-  * `:orca_address` - The address of the Orca Queue that is used to liquidate the collateral token
+  * `:orca_queue` - The address of the Orca Queue that is used to liquidate the collateral token
 
   * `:collateral_token` - The token used to back the loan
 

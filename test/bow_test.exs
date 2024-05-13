@@ -1,4 +1,6 @@
 defmodule KujiraBowTest do
+  alias Kujira.Bow.Leverage
+  alias Kujira.Orca.Queue
   alias Kujira.Orca
   alias Kujira.Bow
   use ExUnit.Case
@@ -52,7 +54,14 @@ defmodule KujiraBowTest do
 
     for %{address: address} <- contracts do
       {:ok, market} = Bow.get_leverage(channel, address)
-      {:ok, {%Orca.Market{}, %Orca.Market{}}} = Bow.load_orca_markets(channel, market)
+
+      {:ok,
+       {%Orca.Market{address: {Leverage, market_a}, queue: {Queue, queue_a}},
+        %Orca.Market{address: {Leverage, market_b}, queue: {Queue, queue_b}}}} =
+        Bow.load_orca_markets(channel, market)
+
+      assert queue_a != queue_b
+      assert market_a == market_b
     end
   end
 end

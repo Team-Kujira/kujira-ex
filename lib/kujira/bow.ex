@@ -178,8 +178,16 @@ defmodule Kujira.Bow do
         )
 
       {:ok,
-       {%Kujira.Orca.Market{address: market.address, health: health_base},
-        %Kujira.Orca.Market{address: market.address, health: health_quote}}}
+       {%Kujira.Orca.Market{
+          address: {Leverage, market.address},
+          queue: market.orca_queue_base,
+          health: health_base
+        },
+        %Kujira.Orca.Market{
+          address: {Leverage, market.address},
+          queue: market.orca_queue_quote,
+          health: health_quote
+        }}}
     end
   end
 end
