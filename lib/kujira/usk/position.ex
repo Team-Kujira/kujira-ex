@@ -94,8 +94,11 @@ defmodule Kujira.Usk.Position do
   Decimal.new("1.666666666666666666666666667E-9")
   """
 
-  def liquidation_price(%__MODULE__{debt_amount: debt_amount}, _)
-      when debt_amount == 0 do
+  def liquidation_price(
+        %__MODULE__{debt_amount: debt_amount, collateral_amount: collateral_amount},
+        _
+      )
+      when debt_amount == 0 or collateral_amount == 0 do
     Decimal.new(0)
   end
 
