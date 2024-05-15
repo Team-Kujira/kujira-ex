@@ -5,6 +5,7 @@ defmodule KujiraUskTest do
   use Kujira.TestHelpers
 
   doctest Kujira.Usk
+  doctest Kujira.Usk.Position
 
   #  Mainnet ATOM
   @market "kujira1ecgazyd0waaj3g7l9cmy5gulhxkps2gmxu9ghducvuypjq68mq2smfdslf"

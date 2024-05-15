@@ -141,22 +141,17 @@ defmodule Kujira.Ghost do
         |> Enum.reduce(
           %{},
           fn model, agg ->
-            with %{
-                   #  "holder" => holder,
-                   "collateral_amount" => collateral_amount,
-                   "debt_shares" => debt_shares
-                 } <- model,
-                 {debt_shares, ""} <- Integer.parse(debt_shares),
-                 {collateral_amount, ""} when collateral_amount > 0 <-
-                   Integer.parse(collateral_amount) do
+            with {:ok, position} <- Position.from_query(market, vault, model) do
               liquidation_price =
-                debt_shares
-                |> Decimal.new()
-                |> Decimal.mult(vault.status.debt_ratio)
-                |> Decimal.div(collateral_amount |> Decimal.new() |> Decimal.mult(market.max_ltv))
+                Position.liquidation_price(position, market, vault)
                 |> Decimal.round(precision, :ceiling)
 
-              Map.update(agg, liquidation_price, collateral_amount, &(&1 + collateral_amount))
+              Map.update(
+                agg,
+                liquidation_price,
+                position.collateral_amount,
+                &(&1 + position.collateral_amount)
+              )
             else
               _ -> agg
             end

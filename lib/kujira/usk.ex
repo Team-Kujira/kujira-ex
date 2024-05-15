@@ -140,25 +140,20 @@ defmodule Kujira.Usk do
         |> Enum.reduce(
           %{},
           fn model, agg ->
-            with %{
-                   #  "holder" => holder,
-                   "deposit_amount" => deposit_amount,
-                   "mint_amount" => mint_amount
-                 } <- model,
-                 {debt_amount, ""} <- Integer.parse(mint_amount),
-                 {collateral_amount, ""} when collateral_amount > 0 <-
-                   Integer.parse(deposit_amount) do
+            with {:ok, position} <- Position.from_query(market, model) do
               liquidation_price =
-                debt_amount
-                |> Decimal.new()
-                # TODO: Load current and historic interest rates. Calculate accrued interest
-                |> Decimal.div(collateral_amount |> Decimal.new() |> Decimal.mult(market.max_ltv))
+                Position.liquidation_price(position, market)
                 |> Decimal.round(
                   precision,
                   :ceiling
                 )
 
-              Map.update(agg, liquidation_price, collateral_amount, &(&1 + collateral_amount))
+              Map.update(
+                agg,
+                liquidation_price,
+                position.collateral_amount,
+                &(&1 + position.collateral_amount)
+              )
             else
               _ -> agg
             end

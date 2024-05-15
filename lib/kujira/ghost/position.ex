@@ -73,6 +73,48 @@ defmodule Kujira.Ghost.Position do
 
   def from_query(%Market{}, %Vault{}, _), do: :error
 
+  @spec liquidation_price(Position.t(), Market.t(), Vault.t()) :: Decimal.t()
+  @doc """
+  Calculates a liquidation price for a given position. Quoted in terms of the underlying token decimals
+
+  Token where decimals are similar - eg a loan of 1.2 USDC against 1 KUJI where max ltv is 0.6
+
+  iex> Kujira.Ghost.Position.liquidation_price(
+  ...>   %Kujira.Ghost.Position{debt_shares: 1_000_000, collateral_amount: 1_000_000},
+  ...>   %Kujira.Ghost.Market{max_ltv: Decimal.from_float(0.6)},
+  ...>   %Kujira.Ghost.Vault{status: %{debt_ratio: Decimal.from_float(1.2)}}
+  ...>)
+  Decimal.new(2)
+
+  And eg 1 wETH with 1000 USDC debt. Liq price should be 1666, which with a 12 dp decimal delta is 0.000000001666
+
+  iex> Kujira.Ghost.Position.liquidation_price(
+  ...>   %Kujira.Ghost.Position{debt_shares: 1_000_000_000, collateral_amount: 1_000_000_000_000_000_000},
+  ...>   %Kujira.Ghost.Market{max_ltv: Decimal.from_float(0.6)},
+  ...>   %Kujira.Ghost.Vault{status: %{debt_ratio: Decimal.from_float(1.0)}}
+  ...>)
+  Decimal.new("1.666666666666666666666666667E-9")
+  """
+
+  def liquidation_price(%__MODULE__{debt_shares: debt_shares}, _, _)
+      when debt_shares == 0 do
+    Decimal.new(0)
+  end
+
+  def liquidation_price(
+        %__MODULE__{
+          debt_shares: debt_shares,
+          collateral_amount: collateral_amount
+        },
+        %Market{max_ltv: max_ltv},
+        %Vault{status: %{debt_ratio: debt_ratio}}
+      ) do
+    debt_shares
+    |> Decimal.new()
+    |> Decimal.mult(debt_ratio)
+    |> Decimal.div(collateral_amount |> Decimal.new() |> Decimal.mult(max_ltv))
+  end
+
   @doc """
   Returns all adjustments to positions found in the tx response
   """

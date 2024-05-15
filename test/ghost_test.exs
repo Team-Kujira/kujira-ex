@@ -5,6 +5,7 @@ defmodule KujiraGhostTest do
   use Kujira.TestHelpers
 
   doctest Kujira.Ghost
+  doctest Kujira.Ghost.Position
 
   test "queries a vault", %{channel: channel} do
     assert Ghost.get_vault(
