@@ -131,6 +131,10 @@ defmodule Kujira.Ghost do
     with {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000),
          {:ok, vault} <- Contract.get(channel, market.vault),
          {:ok, vault} <- load_vault(channel, vault) do
+      # Liquidation prices are in terms of the base units. Precision should be adjusted for decimal delta
+      precision =
+        precision + market.collateral_token.meta.decimals - vault.deposit_token.meta.decimals
+
       health =
         models
         |> Map.values()

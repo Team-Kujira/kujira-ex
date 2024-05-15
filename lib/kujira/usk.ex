@@ -130,6 +130,9 @@ defmodule Kujira.Usk do
   def load_orca_market(channel, market, precision \\ 3) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
 
+    # Liquidation prices are in terms of the base units. Precision should be adjusted for decimal delta
+    precision = precision + market.collateral_token.meta.decimals - 6
+
     with {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000) do
       health =
         models
@@ -150,7 +153,10 @@ defmodule Kujira.Usk do
                 |> Decimal.new()
                 # TODO: Load current and historic interest rates. Calculate accrued interest
                 |> Decimal.div(collateral_amount |> Decimal.new() |> Decimal.mult(market.max_ltv))
-                |> Decimal.round(precision, :ceiling)
+                |> Decimal.round(
+                  precision,
+                  :ceiling
+                )
 
               Map.update(agg, liquidation_price, collateral_amount, &(&1 + collateral_amount))
             else
