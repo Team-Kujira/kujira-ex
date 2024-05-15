@@ -59,7 +59,7 @@ defmodule KujiraTokenTest do
                path: "transfer/channel-62"
              },
              meta: %Token.Meta{
-               name: "USD Coin",
+               name: "USDC",
                symbol: "USDC",
                decimals: 6,
                coingecko_id: "usd-coin",

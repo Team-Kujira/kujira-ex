@@ -33,7 +33,7 @@ defmodule Kujira.Bow.Leverage do
 
   * `:full_liquidation_threshold` - The position value below which a liquidation covers all outstanding debt
 
-  * `:partial_liquidation_target` - The target LTV to be achieved when a position is partially liquidated
+  * `:partial_liquidation_fraction` - The target LTV to be achieved when a position is partially liquidated
 
   * `:borrow_fee` - The percentage of borrowed assets that are sent to KUJI stakers as a fee
   """
@@ -100,7 +100,7 @@ defmodule Kujira.Bow.Leverage do
     :orca_queue_quote,
     :max_ltv,
     :full_liquidation_threshold,
-    :partial_liquidation_target,
+    :partial_liquidation_fraction,
     :borrow_fee,
     :status
   ]
@@ -119,7 +119,7 @@ defmodule Kujira.Bow.Leverage do
           orca_queue_quote: {Orca.Queue, String.t()},
           max_ltv: Decimal.t(),
           full_liquidation_threshold: non_neg_integer(),
-          partial_liquidation_target: Decimal.t(),
+          partial_liquidation_fraction: Decimal.t(),
           borrow_fee: Decimal.t(),
           status: :not_loaded | Status.t()
         }
@@ -144,12 +144,12 @@ defmodule Kujira.Bow.Leverage do
         "orcas" => [orca_queue_base, orca_queue_quote],
         "max_ltv" => max_ltv,
         "full_liquidation_threshold" => full_liquidation_threshold,
-        "partial_liquidation_target" => partial_liquidation_target,
+        "partial_liquidation_target" => partial_liquidation_fraction,
         "borrow_fee" => borrow_fee
       }) do
     with {full_liquidation_threshold, ""} <- Integer.parse(full_liquidation_threshold),
          {max_ltv, ""} <- Decimal.parse(max_ltv),
-         {partial_liquidation_target, ""} <- Decimal.parse(partial_liquidation_target),
+         {partial_liquidation_fraction, ""} <- Decimal.parse(partial_liquidation_fraction),
          {borrow_fee, ""} <- Decimal.parse(borrow_fee),
          {:ok, token_base} <- Token.from_denom(channel, denom_base),
          {:ok, token_quote} <- Token.from_denom(channel, denom_quote) do
@@ -168,7 +168,7 @@ defmodule Kujira.Bow.Leverage do
          orca_queue_quote: {Orca.Queue, orca_queue_quote},
          max_ltv: max_ltv,
          full_liquidation_threshold: full_liquidation_threshold,
-         partial_liquidation_target: partial_liquidation_target,
+         partial_liquidation_fraction: partial_liquidation_fraction,
          borrow_fee: borrow_fee,
          status: :not_loaded
        }}
