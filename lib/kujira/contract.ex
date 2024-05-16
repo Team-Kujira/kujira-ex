@@ -117,15 +117,14 @@ defmodule Kujira.Contract do
   @doc """
   Queries the full, raw contract state at an address. Default 1h cache
   """
-  @spec query_state_all(GRPC.Channel.t(), String.t(), integer() | nil) ::
+  @spec query_state_all(GRPC.Channel.t(), String.t()) ::
           {:ok, map()} | {:error, GRPC.RPCError.t()}
-  def query_state_all(channel, address, expires_in \\ 60 * 60 * 1000) do
+  def query_state_all(channel, address) do
     Memoize.Cache.get_or_run(
       {__MODULE__, :query_state_all, [address]},
       fn ->
         query_state_all_page(channel, address, nil)
-      end,
-      expires_in: expires_in
+      end
     )
   end
 
