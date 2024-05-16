@@ -115,7 +115,7 @@ defmodule Kujira.Bow do
 
     with {:ok, pool} <- Contract.get(channel, market.bow),
          {:ok, %{status: %Status{} = pool_status}} <- load_pool(channel, pool),
-         {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000),
+         {:ok, models} <- Contract.query_state_all(channel, market.address),
          {:ok, vault_base} <- Contract.get(channel, market.ghost_vault_base),
          {:ok, %{status: %Ghost.Vault.Status{} = vault_base_status}} <-
            Ghost.load_vault(channel, vault_base),

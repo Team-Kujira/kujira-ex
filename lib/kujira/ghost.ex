@@ -128,7 +128,7 @@ defmodule Kujira.Ghost do
   def load_orca_market(channel, market, precision \\ 3) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
 
-    with {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000),
+    with {:ok, models} <- Contract.query_state_all(channel, market.address),
          {:ok, vault} <- Contract.get(channel, market.vault),
          {:ok, vault} <- load_vault(channel, vault) do
       # Liquidation prices are in terms of the base units. Precision should be adjusted for decimal delta

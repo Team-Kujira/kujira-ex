@@ -135,7 +135,7 @@ defmodule Kujira.Usk do
     # Liquidation prices are in terms of the base units. Precision should be adjusted for decimal delta
     precision = precision + market.collateral_token.meta.decimals - 6
 
-    with {:ok, models} <- Contract.query_state_all(channel, market.address, 10 * 60 * 1000) do
+    with {:ok, models} <- Contract.query_state_all(channel, market.address) do
       health =
         models
         |> Map.values()
