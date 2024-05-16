@@ -90,19 +90,25 @@ defmodule KujiraUskTest do
         @market
       )
 
-    {:ok, %Kujira.Orca.Market{} = market} = Usk.load_orca_market(channel, market)
+    {:ok,
+     %Kujira.Orca.Market{
+       address:
+         {Kujira.Usk.Market, "kujira1ecgazyd0waaj3g7l9cmy5gulhxkps2gmxu9ghducvuypjq68mq2smfdslf"}
+     } = market} = Usk.load_orca_market(channel, market)
+
     [{%Decimal{}, val} | _] = Map.to_list(market.health)
     assert val > 0
   end
 
   test "loads a margin health", %{channel: channel} do
-    {:ok, %{market: market}} =
-      Usk.get_margin(
-        channel,
-        @margin
-      )
+    {:ok, margin} = Usk.get_margin(channel, @margin)
 
-    {:ok, %Kujira.Orca.Market{} = market} = Usk.load_orca_market(channel, market)
+    {:ok,
+     %Kujira.Orca.Market{
+       address:
+         {Kujira.Usk.Margin, "kujira1m0z0kk0qqug74n9u9ul23e28x5fszr628h20xwt6jywjpp64xn4qkxmjq3"}
+     } = market} = Usk.load_orca_market(channel, margin)
+
     [{%Decimal{}, _} | _] = Map.to_list(market.health)
   end
 

@@ -125,9 +125,11 @@ defmodule Kujira.Usk do
   Can be used for both a Ghost.Market and Ghost.Margin.market, as they both use the same underlying
   state schema
   """
-  @spec load_orca_market(Channel.t(), Market.t(), integer() | nil) ::
+  @spec load_orca_market(Channel.t(), Market.t() | Margin.t(), integer() | nil) ::
           {:ok, Kujira.Orca.Market.t()} | {:error, GRPC.RPCError.t()}
-  def load_orca_market(channel, market, precision \\ 3) do
+  def load_orca_market(channel, arket, precision \\ 3)
+
+  def load_orca_market(channel, %Market{} = market, precision) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})
 
     # Liquidation prices are in terms of the base units. Precision should be adjusted for decimal delta
@@ -166,6 +168,12 @@ defmodule Kujira.Usk do
          queue: market.orca_queue,
          health: health
        }}
+    end
+  end
+
+  def load_orca_market(channel, %Margin{market: market}, precision) do
+    with {:ok, orca} <- load_orca_market(channel, market, precision) do
+      {:ok, %Kujira.Orca.Market{orca | address: {Margin, market.address}}}
     end
   end
 
