@@ -9,6 +9,8 @@ defmodule KujiraUskTest do
 
   #  Mainnet ATOM
   @market "kujira1ecgazyd0waaj3g7l9cmy5gulhxkps2gmxu9ghducvuypjq68mq2smfdslf"
+  #  Mainnet ATOM
+  @margin "kujira1m0z0kk0qqug74n9u9ul23e28x5fszr628h20xwt6jywjpp64xn4qkxmjq3"
 
   test "queries a market", %{channel: channel} do
     assert Usk.get_market(
@@ -91,6 +93,17 @@ defmodule KujiraUskTest do
     {:ok, %Kujira.Orca.Market{} = market} = Usk.load_orca_market(channel, market)
     [{%Decimal{}, val} | _] = Map.to_list(market.health)
     assert val > 0
+  end
+
+  test "loads a margin health", %{channel: channel} do
+    {:ok, %{market: market}} =
+      Usk.get_margin(
+        channel,
+        @margin
+      )
+
+    {:ok, %Kujira.Orca.Market{} = market} = Usk.load_orca_market(channel, market)
+    [{%Decimal{}, _} | _] = Map.to_list(market.health)
   end
 
   test "fetches all markets", %{channel: channel} do
