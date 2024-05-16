@@ -15,7 +15,7 @@ defmodule Kujira.Bow do
   import Cosmos.Bank.V1beta1.Query.Stub
   alias Cosmos.Bank.V1beta1.QuerySupplyOfRequest
 
-  @pool_code_ids Application.get_env(:kujira, __MODULE__,
+  @pool_code_ids Application.compile_env(:kujira, __MODULE__,
                    pool_code_ids: [
                      54,
                      126,
@@ -30,7 +30,9 @@ defmodule Kujira.Bow do
                  )
                  |> Keyword.get(:pool_code_ids)
 
-  @leverage_code_ids Application.get_env(:kujira, __MODULE__, leverage_code_ids: [188, 290, 305])
+  @leverage_code_ids Application.compile_env(:kujira, __MODULE__,
+                       leverage_code_ids: [188, 290, 305]
+                     )
                      |> Keyword.get(:leverage_code_ids)
 
   @doc """

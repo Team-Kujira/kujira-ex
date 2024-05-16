@@ -14,15 +14,15 @@ defmodule Kujira.Usk do
   alias Kujira.Usk.Controller
 
   @controller_code_id :kujira
-                      |> Application.get_env(__MODULE__, controller_code_id: 11)
+                      |> Application.compile_env(__MODULE__, controller_code_id: 11)
                       |> Keyword.get(:controller_code_id)
 
   @market_code_ids :kujira
-                   |> Application.get_env(__MODULE__, market_code_ids: [73])
+                   |> Application.compile_env(__MODULE__, market_code_ids: [73])
                    |> Keyword.get(:market_code_ids)
 
   @margin_code_ids :kujira
-                   |> Application.get_env(__MODULE__, margin_code_ids: [87])
+                   |> Application.compile_env(__MODULE__, margin_code_ids: [87])
                    |> Keyword.get(:margin_code_ids)
 
   @doc """
