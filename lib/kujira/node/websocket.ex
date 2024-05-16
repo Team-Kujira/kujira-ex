@@ -16,7 +16,7 @@ defmodule Kujira.Node.Websocket do
       end
 
       def handle_connect(_conn, state) do
-        Logger.info("#{__MODULE__} Connected!")
+        Logger.info("#{__MODULE__} Connected")
 
         {:ok, state}
       end
@@ -27,9 +27,14 @@ defmodule Kujira.Node.Websocket do
 
       def handle_frame({:text, msg}, state) do
         case Jason.decode(msg, keys: :atoms) do
-          {:ok, %{result: %{data: %{type: t, value: v}}}} ->
+          {:ok, %{id: id, result: %{data: %{type: t, value: v}}}} ->
+            Logger.info("#{__MODULE__} Subscription #{id} event #{t}")
             Phoenix.PubSub.broadcast(unquote(pubsub), t, v)
 
+            {:ok, state}
+
+          {:ok, %{id: id, jsonrpc: "2.0", result: %{}}} ->
+            Logger.info("#{__MODULE__} Subscription #{id} successful")
             {:ok, state}
 
           _ ->
