@@ -20,7 +20,7 @@ defmodule Kujira.CacheStrategy do
     # config :memoize, Memoize.CacheStrategy.Default,
     #   expires_in: 1000
     expires_in =
-      Application.compile_env(:memoize, __MODULE__, []) |> Keyword.get(:expires_in, :infinity)
+      Application.get_env(:memoize, __MODULE__, []) |> Keyword.get(:expires_in, :infinity)
 
     opts = Keyword.put(opts, :expires_in, expires_in)
     opts
