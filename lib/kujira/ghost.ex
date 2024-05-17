@@ -17,7 +17,7 @@ defmodule Kujira.Ghost do
   alias Cosmos.Bank.V1beta1.QueryBalanceRequest
   alias Cosmos.Bank.V1beta1.QueryBalanceResponse
 
-  @vault_code_ids Application.compile_env(:kujira, __MODULE__, vault_code_ids: [140])
+  @vault_code_ids Application.compile_env(:kujira, __MODULE__, vault_code_ids: [140, 316])
                   |> Keyword.get(:vault_code_ids)
 
   @market_code_ids Application.compile_env(:kujira, __MODULE__, market_code_ids: [291])

@@ -31,7 +31,7 @@ defmodule Kujira.Bow do
                  |> Keyword.get(:pool_code_ids)
 
   @leverage_code_ids Application.compile_env(:kujira, __MODULE__,
-                       leverage_code_ids: [188, 290, 305]
+                       leverage_code_ids: [188, 290, 305, 317]
                      )
                      |> Keyword.get(:leverage_code_ids)
 
