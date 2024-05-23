@@ -33,7 +33,7 @@ defmodule Kujira.Fin do
           {:ok, Pair.t()} | {:error, GRPC.RPCError.t()}
   def load_pair(channel, pair, limit \\ 100) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_pair, [pair, limit]},
+      {__MODULE__, :load_pair, [pair.address]},
       fn ->
         with {:ok, res} <-
                Contract.query_state_smart(channel, pair.address, %{book: %{limit: limit}}),
