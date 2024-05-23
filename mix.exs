@@ -5,7 +5,7 @@ defmodule Kujira.MixProject do
     [
       app: :kujira,
       description: "Elixir interfaces to Kujira dApps, for building indexers, APIs and bots",
-      version: "0.1.48",
+      version: "0.1.49",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -32,6 +32,7 @@ defmodule Kujira.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:phoenix, "~> 1.6.12"},
       {:decimal, "~> 2.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:grpc, "~> 0.5.0"},

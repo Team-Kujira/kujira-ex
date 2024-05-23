@@ -201,12 +201,3 @@ defmodule Kujira.Contract do
     end)
   end
 end
-
-defimpl Kujira.Invalidate, for: Kujira.Contract do
-  alias Cosmos.Base.Tendermint.V1beta1.Block
-
-  @impl true
-  def invalidations(%Block{}) do
-    []
-  end
-end

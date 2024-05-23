@@ -46,7 +46,7 @@ defmodule Kujira.Ghost do
   @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | {:error, GRPC.RPCError.t()}
   def load_market(channel, market) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_market, [market]},
+      {__MODULE__, :load_market, [market.address]},
       fn ->
         with {:ok, res} <-
                Contract.query_state_smart(channel, market.address, %{status: %{}}),
@@ -67,7 +67,7 @@ defmodule Kujira.Ghost do
           {:ok, Position.t()} | {:error, GRPC.RPCError.t()}
   def load_position(channel, market, borrower) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_position, [market, borrower]},
+      {__MODULE__, :load_position, [market.address, borrower]},
       fn ->
         with {:ok, res} <-
                Contract.query_state_smart(channel, market.address, %{
@@ -94,24 +94,18 @@ defmodule Kujira.Ghost do
   def get_deposit(
         channel,
         %Vault{receipt_token: receipt_token, status: %Vault.Status{deposit_ratio: deposit_ratio}} =
-          vault,
-        borrower
+          borrower
       ) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :get_deposit, [vault, borrower]},
-      fn ->
-        with {:ok, %QueryBalanceResponse{balance: %{amount: amount}}} <-
-               BankQuery.balance(
-                 channel,
-                 QueryBalanceRequest.new(address: borrower, denom: receipt_token.denom)
-               ),
-             {amount, ""} <- Decimal.parse(amount) do
-          {:ok, Decimal.mult(amount, deposit_ratio) |> Decimal.to_integer()}
-        else
-          err -> err
-        end
-      end
-    )
+    with {:ok, %QueryBalanceResponse{balance: %{amount: amount}}} <-
+           BankQuery.balance(
+             channel,
+             QueryBalanceRequest.new(address: borrower, denom: receipt_token.denom)
+           ),
+         {amount, ""} <- Decimal.parse(amount) do
+      {:ok, Decimal.mult(amount, deposit_ratio) |> Decimal.to_integer()}
+    else
+      err -> err
+    end
   end
 
   def get_deposit(channel, %Vault{status: :not_loaded} = vault, borrower) do
@@ -187,7 +181,7 @@ defmodule Kujira.Ghost do
   @spec load_vault(Channel.t(), Vault.t()) :: {:ok, Vault.t()} | {:error, GRPC.RPCError.t()}
   def load_vault(channel, vault) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_vault, [vault]},
+      {__MODULE__, :load_vault, [vault.address]},
       fn ->
         with {:ok, res} <-
                Contract.query_state_smart(channel, vault.address, %{status: %{}}),

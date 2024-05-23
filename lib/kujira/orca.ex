@@ -35,7 +35,7 @@ defmodule Kujira.Orca do
   @spec load_queue(Channel.t(), Queue.t()) :: {:ok, Queue.t()} | {:error, GRPC.RPCError.t()}
   def load_queue(channel, queue) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_queue, [queue]},
+      {__MODULE__, :load_queue, [queue.address]},
       fn ->
         with {:ok, %{"bid_pools" => bid_pools}} <-
                Contract.query_state_smart(channel, queue.address, %{bid_pools: %{limit: 30}}) do
@@ -54,7 +54,7 @@ defmodule Kujira.Orca do
           {:ok, Bid.t()} | {:error, :not_found} | {:error, GRPC.RPCError.t()}
   def load_bid(channel, queue, idx) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_bid, [queue, idx]},
+      {__MODULE__, :load_bid, [queue.address, idx]},
       fn ->
         with {:ok, bid} <-
                Contract.query_state_smart(channel, queue.address, %{bid: %{bid_idx: idx}}) do
@@ -82,7 +82,7 @@ defmodule Kujira.Orca do
           {:ok, list(Bid.t())} | {:error, GRPC.RPCError.t()}
   def load_bids(channel, queue, address, start_after \\ nil) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_bids, [queue, address, start_after]},
+      {__MODULE__, :load_bids, [queue.address, address]},
       fn ->
         with {:ok, %{"bids" => bids}} <-
                Contract.query_state_smart(channel, queue.address, %{

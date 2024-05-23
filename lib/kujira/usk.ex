@@ -48,7 +48,7 @@ defmodule Kujira.Usk do
   @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | {:error, GRPC.RPCError.t()}
   def load_market(channel, market) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_market, [market]},
+      {__MODULE__, :load_market, [market.address]},
       fn ->
         with {:ok, res} <-
                Contract.query_state_smart(channel, market.address, %{status: %{}}),
@@ -83,7 +83,7 @@ defmodule Kujira.Usk do
   @spec load_margin(Channel.t(), Margin.t()) :: {:ok, Margin.t()} | {:error, GRPC.RPCError.t()}
   def load_margin(channel, margin) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_margin, [margin]},
+      {__MODULE__, :load_margin, [margin.address]},
       fn ->
         with {:ok, res} <-
                Contract.query_state_smart(channel, margin.address, %{status: %{}}),
@@ -104,7 +104,7 @@ defmodule Kujira.Usk do
           {:ok, Position.t()} | {:error, GRPC.RPCError.t()}
   def load_position(channel, market, borrower) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_position, [market, borrower]},
+      {__MODULE__, :load_position, [market.address, borrower]},
       fn ->
         with {:ok, res} <-
                Contract.query_state_smart(channel, market.address, %{
@@ -127,7 +127,7 @@ defmodule Kujira.Usk do
   """
   @spec load_orca_market(Channel.t(), Market.t() | Margin.t(), integer() | nil) ::
           {:ok, Kujira.Orca.Market.t()} | {:error, GRPC.RPCError.t()}
-  def load_orca_market(channel, arket, precision \\ 3)
+  def load_orca_market(channel, market, precision \\ 3)
 
   def load_orca_market(channel, %Market{} = market, precision) do
     Decimal.Context.set(%Decimal.Context{rounding: :floor})

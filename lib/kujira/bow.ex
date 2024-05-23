@@ -60,7 +60,7 @@ defmodule Kujira.Bow do
   @spec load_pool(Channel.t(), Lsd.t()) :: {:ok, Lsd.t()} | {:error, :not_found}
   def load_pool(channel, pool) do
     Memoize.Cache.get_or_run(
-      {__MODULE__, :load_pool, [pool]},
+      {__MODULE__, :load_pool, [pool.address]},
       fn ->
         with {:ok, status} <-
                Contract.query_state_smart(channel, pool.address, %{pool: %{}}),
