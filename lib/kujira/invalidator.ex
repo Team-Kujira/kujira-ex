@@ -61,11 +61,16 @@ defmodule Kujira.Invalidator do
     scan_attributes(rest, [
       {Kujira.Contract, :query_state_all, [value]},
       {Kujira.Fin, :load_pair, [value]},
+      {Kujira.Fin, :list_orders, [value, :_]},
       {Kujira.Ghost, :load_market, [value]},
       {Kujira.Ghost, :load_vault, [value]},
+      {Kujira.Ghost, :load_position, [value, :_]},
       {Kujira.Orca, :load_queue, [value]},
+      {Kujira.Orca, :load_bid, [value, :_]},
+      {Kujira.Orca, :load_bids, [value, :_]},
       {Kujira.Usk, :load_market, [value]},
       {Kujira.Usk, :load_margin, [value]},
+      {Kujira.Usk, :load_position, [value, :_]},
       {Kujira.Bow, :load_pool, [value]} | collection
     ])
   end
