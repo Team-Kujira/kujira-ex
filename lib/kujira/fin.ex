@@ -3,6 +3,7 @@ defmodule Kujira.Fin do
   Kujira's 100% on-chain, central limit order book style decentralized token exchange.
   """
 
+  alias Kujira.Fin.Order
   alias Kujira.Contract
   alias Kujira.Fin.Pair
   alias Kujira.Fin.Book
@@ -39,6 +40,29 @@ defmodule Kujira.Fin do
                Contract.query_state_smart(channel, pair.address, %{book: %{limit: limit}}),
              {:ok, book} <- Book.from_query(res) do
           {:ok, %{pair | book: book}}
+        else
+          err ->
+            err
+        end
+      end
+    )
+  end
+
+  @doc """
+  Fetches all Orders for a pair
+  """
+
+  @spec list_orders(GRPC.Channel.t(), Pair.t(), String.t()) ::
+          {:ok, list(Order.t())} | {:error, GRPC.RPCError.t()}
+  def list_orders(channel, pair, address) do
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :list_orders, [pair.address, address]},
+      fn ->
+        with {:ok, %{"orders" => orders}} <-
+               Contract.query_state_smart(channel, pair.address, %{
+                 orders_by_user: %{address: address}
+               }) do
+          {:ok, Enum.map(orders, &Order.from_query(channel, pair, &1))}
         else
           err ->
             err
