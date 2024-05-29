@@ -10,6 +10,16 @@ defmodule KujiraTokenTest do
     assert %Token{denom: "ukuji"} = token
   end
 
+  test "a ghost token correctly", %{channel: channel} do
+    {:ok, token} =
+      Token.from_denom(
+        channel,
+        "factory/kujira143fwcudwy0exd6zd3xyvqt2kae68ud6n8jqchufu7wdg5sryd4lqtlvvep/urcpt"
+      )
+
+    assert %Token{meta: %Token.Meta{symbol: "xKUJI"}} = token
+  end
+
   test "an ibc token correctly", %{channel: channel} do
     {:ok, token} =
       Token.from_denom(

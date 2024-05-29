@@ -8,6 +8,8 @@ defmodule Kujira.Ghost do
   """
 
   use Memoize
+  alias Kujira.Token.Meta
+  alias Kujira.Token
   alias GRPC.Channel
   alias Kujira.Contract
   alias Kujira.Ghost.Market
@@ -221,4 +223,28 @@ defmodule Kujira.Ghost do
       _ -> true
     end)
   end
+
+  defmemo token_meta(channel, %Token{denom: "factory/" <> token}) do
+    with [address, "urcpt"] <- String.split(token, "/"),
+         {:ok,
+          %{
+            "oracle" => _oracle,
+            "receipt_denom" => _receipt_denom,
+            "debt_token_denom" => _debt_token_denom,
+            "denom" => denom
+          }} <- Contract.query_state_smart(channel, address, %{config: %{}}),
+         {:ok, %{meta: %Meta{decimals: decimals, symbol: symbol}}} <-
+           Token.from_denom(channel, denom) do
+      %Meta{
+        name: "Kujira GHOST #{symbol} deposit",
+        decimals: decimals,
+        symbol: "x#{symbol}",
+        png: "https://assets.kujira.app/tokens/ghost/#{String.downcase(symbol)}.png"
+      }
+    else
+      _ -> nil
+    end
+  end
+
+  defmemo(token_meta(_, _), do: nil)
 end

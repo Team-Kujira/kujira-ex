@@ -19,10 +19,13 @@ defmodule Kujira.Token.Meta do
 
   use Memoize
   import Ibc.Core.Channel.V1.Query.Stub
+  alias Kujira.Ghost
   alias Ibc.Core.Channel.V1.QueryChannelClientStateRequest
   alias Ibc.Lightclients.Tendermint.V1.ClientState
 
   alias Kujira.Token
+
+  @custom [Ghost]
 
   defstruct [:name, :decimals, :symbol, :coingecko_id, :png, :svg]
 
@@ -39,12 +42,20 @@ defmodule Kujira.Token.Meta do
 
   # Local token, fetch from kujira assetlist
   @spec from_token(GRPC.Channel.t(), Kujira.Token.t()) :: {:ok, Kujira.Token.Meta.t()}
-  def from_token(_, %Token{denom: denom, trace: nil}) do
-    with {:ok, res} <- ChainRegistry.chain_assets("kujira") do
-      res
-      |> Map.get("assets", [])
-      |> Enum.find(&(&1["base"] == denom))
-      |> from_chain_registry()
+  def from_token(channel, %Token{denom: denom, trace: nil}) do
+    case Enum.reduce(@custom, nil, fn v, _ ->
+           v.token_meta(channel, %Token{denom: denom, trace: nil})
+         end) do
+      nil ->
+        with {:ok, res} <- ChainRegistry.chain_assets("kujira") do
+          res
+          |> Map.get("assets", [])
+          |> Enum.find(&(&1["base"] == denom))
+          |> from_chain_registry()
+        end
+
+      %__MODULE__{} = meta ->
+        {:ok, meta}
     end
   end
 

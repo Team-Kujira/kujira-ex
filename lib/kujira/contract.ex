@@ -5,9 +5,22 @@ defmodule Kujira.Contract do
   alias Cosmos.Base.Query.V1beta1.PageRequest
   alias Cosmwasm.Wasm.V1.Query.Stub
   alias Cosmwasm.Wasm.V1.QueryAllContractStateRequest
+  alias Cosmwasm.Wasm.V1.QueryContractInfoRequest
   alias Cosmwasm.Wasm.V1.QuerySmartContractStateRequest
   alias Cosmwasm.Wasm.V1.QueryContractsByCodeRequest
   alias Cosmwasm.Wasm.V1.Model
+
+  @spec info(GRPC.Channel.t(), String.t()) ::
+          {:ok, Cosmwasm.Wasm.V1.ContractInfo.t()} | {:error, GRPC.RPCError.t()}
+  def info(channel, address) do
+    with {:ok, %{contract_info: contract_info}} <-
+           Stub.contract_info(
+             channel,
+             QueryContractInfoRequest.new(address: address)
+           ) do
+      {:ok, contract_info}
+    end
+  end
 
   @spec by_code(GRPC.Channel.t(), integer()) ::
           {:ok, list(String.t())} | {:error, GRPC.RPCError.t()}
