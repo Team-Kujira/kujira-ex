@@ -89,19 +89,24 @@ defmodule Kujira.Fin.Pair do
     end
   end
 
-  def from_config(channel, address, %{
-        "owner" => owner,
-        "denoms" => [denom_base, denom_quote],
-        "price_precision" => %{"decimal_places" => price_precision},
-        "decimal_delta" => decimal_delta,
-        "is_bootstrapping" => is_bootstrapping,
-        "fee_taker" => fee_taker,
-        "fee_maker" => fee_maker
-      }) do
+  def from_config(
+        channel,
+        address,
+        %{
+          "owner" => owner,
+          "denoms" => [denom_base, denom_quote],
+          "price_precision" => %{"decimal_places" => price_precision},
+          "decimal_delta" => decimal_delta,
+          "fee_taker" => fee_taker,
+          "fee_maker" => fee_maker
+        } = params
+      ) do
     with {fee_taker, ""} <- Decimal.parse(fee_taker),
          {fee_maker, ""} <- Decimal.parse(fee_maker),
          {:ok, token_base} <- Token.from_denom(channel, denom_base),
          {:ok, token_quote} <- Token.from_denom(channel, denom_quote) do
+      is_bootstrapping = Map.get(params, "is_bootstrapping", false)
+
       {:ok,
        %__MODULE__{
          address: address,
