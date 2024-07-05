@@ -116,7 +116,7 @@ defmodule Kujira.Bow do
     quote_denom = market.token_quote.denom
 
     with {:ok, pool} <- Contract.get(channel, market.bow),
-         {:ok, %{status: %Status{} = pool_status}} <- load_pool(channel, pool),
+         {:ok, pool} <- load_pool(channel, pool),
          {:ok, models} <- Contract.query_state_all(channel, market.address),
          {:ok, vault_base} <- Contract.get(channel, market.ghost_vault_base),
          {:ok, vault_base} <- Ghost.load_vault(channel, vault_base),
@@ -129,7 +129,7 @@ defmodule Kujira.Bow do
           {%{}, %{}},
           fn model, {health_base, health_quote} ->
             with {:ok, position} <-
-                   Position.from_query(vault_base, vault_quote, pool_status, model) do
+                   Position.from_query(vault_base, vault_quote, pool, model) do
               case Leverage.at_risk_collateral(market, pool, position) do
                 {%Token{denom: ^base_denom}, price, amount} ->
                   {
@@ -187,10 +187,10 @@ defmodule Kujira.Bow do
          {:ok, vault_quote} <- Contract.get(channel, leverage.ghost_vault_quote),
          {:ok, vault_quote} <- Ghost.load_vault(channel, vault_quote),
          {:ok, pool} <- Contract.get(channel, leverage.bow),
-         {:ok, %{status: status}} <- Bow.load_pool(channel, pool),
+         {:ok, pool} <- Bow.load_pool(channel, pool),
          {:ok, state} <- Contract.query_state_all(channel, leverage.address) do
       Enum.reduce(state, [], fn {_, v}, acc ->
-        case Position.from_query(vault_base, vault_quote, status, v) do
+        case Position.from_query(vault_base, vault_quote, pool, v) do
           {:ok, position} ->
             [position | acc]
 

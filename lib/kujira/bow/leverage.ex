@@ -194,8 +194,7 @@ defmodule Kujira.Bow.Leverage do
         %Xyk{},
         %Position{} = p
       ) do
-    liquidation_price =
-      Position.liquidation_price(leverage, p) |> IO.inspect(label: :liquidation_pruice)
+    liquidation_price = Position.liquidation_price(leverage, p)
 
     # Unliquidatable
     if Decimal.lt?(liquidation_price, 0) do
