@@ -9,6 +9,8 @@ defmodule Kujira.Bow.Leverage.Position do
 
   * `:bow` - The BOW pool for this position
 
+  * `:leverage` - The leverage contract that manages this position
+  .
   * `:holder` - The address that owns the position
 
   * `:debt_shares_base` - The amount of the base debt token borrowed by this position
@@ -35,6 +37,7 @@ defmodule Kujira.Bow.Leverage.Position do
   defstruct [
     :idx,
     :bow,
+    :leverage,
     :holder,
     :debt_shares_base,
     :debt_amount_base,
@@ -48,6 +51,7 @@ defmodule Kujira.Bow.Leverage.Position do
   @type t :: %__MODULE__{
           idx: String.t(),
           bow: {Xyk | Stable, String.t()},
+          leverage: {Leverage, String.t()},
           holder: String.t(),
           debt_shares_base: integer(),
           debt_amount_base: integer(),
@@ -58,9 +62,10 @@ defmodule Kujira.Bow.Leverage.Position do
           collateral_amount_quote: integer()
         }
 
-  @spec from_query(Vault.t(), Vault.t(), Xyk.t() | Stable.t(), map()) ::
+  @spec from_query(Leverage.t(), Vault.t(), Vault.t(), Xyk.t() | Stable.t(), map()) ::
           :error | {:ok, __MODULE__.t()}
   def from_query(
+        %Leverage{address: address},
         %Vault{status: %Vault.Status{debt_ratio: debt_ratio_base}},
         %Vault{status: %Vault.Status{debt_ratio: debt_ratio_quote}},
         %struct{address: bow, status: %Status{} = status},
@@ -100,6 +105,7 @@ defmodule Kujira.Bow.Leverage.Position do
        %__MODULE__{
          idx: idx,
          bow: {struct, bow},
+         leverage: {Leverage, address},
          holder: holder,
          lp_amount: lp_amount,
          debt_shares_base: debt_shares_base,
@@ -112,8 +118,8 @@ defmodule Kujira.Bow.Leverage.Position do
     end
   end
 
-  def from_query(%Vault{}, %Vault{}, %Xyk{}, _), do: :error
-  def from_query(%Vault{}, %Vault{}, %Stable{}, _), do: :error
+  def from_query(%Leverage{}, %Vault{}, %Vault{}, %Xyk{}, _), do: :error
+  def from_query(%Leverage{}, %Vault{}, %Vault{}, %Stable{}, _), do: :error
 
   @doc """
   Returns the liquidation price of the position
