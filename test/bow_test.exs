@@ -64,4 +64,24 @@ defmodule KujiraBowTest do
       assert market_a == market_b
     end
   end
+
+  test "loads positions", %{channel: channel} do
+    {:ok, leverage} =
+      Bow.get_leverage(
+        channel,
+        "kujira1hc0xq4mu536na35ypvyr8ud66fl57080m54eg0fd5ce2ns63np3qfh79yt"
+      )
+
+    positions = Bow.list_positions(channel, leverage)
+
+    assert Enum.count(positions) > 0
+
+    assert Enum.all?(positions, fn
+             %Leverage.Position{} ->
+               true
+
+             _ ->
+               false
+           end)
+  end
 end

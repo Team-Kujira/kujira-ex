@@ -3,6 +3,8 @@ defmodule Kujira.Bow do
   Kujira's on-chain Market Maker for FIN.
   """
 
+  alias Kujira.Bow
+  alias Kujira.Bow.Leverage.Position
   alias Kujira.Bow.Leverage
   alias Kujira.Bow.Pool
   alias Kujira.Bow.Pool.Lsd
@@ -188,6 +190,31 @@ defmodule Kujira.Bow do
           queue: market.orca_queue_quote,
           health: health_quote
         }}}
+    end
+  end
+
+  @doc """
+  Loads all positions via query_state_all, inheriting the same memoization
+  """
+  @spec list_positions(GRPC.Channel.t(), Leverage.t()) ::
+          list(Position.t())
+  def list_positions(channel, leverage) do
+    with {:ok, vault_base} <- Contract.get(channel, leverage.ghost_vault_base),
+         {:ok, vault_base} <- Ghost.load_vault(channel, vault_base),
+         {:ok, vault_quote} <- Contract.get(channel, leverage.ghost_vault_quote),
+         {:ok, vault_quote} <- Ghost.load_vault(channel, vault_quote),
+         {:ok, pool} <- Contract.get(channel, leverage.bow),
+         {:ok, %{status: status}} <- Bow.load_pool(channel, pool),
+         {:ok, state} <- Contract.query_state_all(channel, leverage.address) do
+      Enum.reduce(state, [], fn {_, v}, acc ->
+        case Position.from_query(vault_base, vault_quote, status, v) do
+          {:ok, position} ->
+            [position | acc]
+
+          _ ->
+            acc
+        end
+      end)
     end
   end
 end

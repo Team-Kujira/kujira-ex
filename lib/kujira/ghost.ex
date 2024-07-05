@@ -228,7 +228,7 @@ defmodule Kujira.Ghost do
   Loads all positions via query_state_all, inheriting the same memoization
   """
   @spec list_positions(GRPC.Channel.t(), Market.t(), Vault.t()) ::
-          %Stream{}
+          list(Position.t())
   def list_positions(channel, market, vault) do
     with {:ok, state} <- Contract.query_state_all(channel, market.address) do
       Enum.reduce(state, [], fn {_, v}, acc ->
