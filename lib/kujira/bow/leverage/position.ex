@@ -24,6 +24,7 @@ defmodule Kujira.Bow.Leverage.Position do
   * `:collateral_amount_quote` - The quote amount that the current LP token is worth
   """
 
+  alias Kujira.Bow.Leverage
   alias Kujira.Ghost.Vault
   alias Kujira.Bow.Status
 
@@ -81,8 +82,13 @@ defmodule Kujira.Bow.Leverage.Position do
         |> Decimal.round(0, :ceiling)
         |> Decimal.to_integer()
 
-      collateral_amount_base = lp_amount * status.base_amount / status.lp_amount
-      collateral_amount_quote = lp_amount * status.quote_amount / status.lp_amount
+      collateral_amount_base =
+        Decimal.div(lp_amount, status.lp_amount)
+        |> Decimal.mult(status.base_amount)
+
+      collateral_amount_quote =
+        Decimal.div(lp_amount, status.lp_amount)
+        |> Decimal.mult(status.quote_amount)
 
       {:ok,
        %__MODULE__{
@@ -100,4 +106,24 @@ defmodule Kujira.Bow.Leverage.Position do
   end
 
   def from_query(%Vault{}, %Vault{}, %Status{}, _), do: :error
+
+  @doc """
+  Returns the liquidation price of the position
+  """
+  @spec liquidation_price(
+          Bow.Leverage.t(),
+          __MODULE__.t()
+        ) :: Decimal.t()
+  def liquidation_price(%Leverage{max_ltv: max_ltv}, %__MODULE__{
+        debt_amount_base: debt_amount_base,
+        debt_amount_quote: debt_amount_quote,
+        collateral_amount_base: collateral_amount_base,
+        collateral_amount_quote: collateral_amount_quote
+      }) do
+    d = max_ltv |> Decimal.mult(collateral_amount_base) |> Decimal.sub(debt_amount_base)
+
+    debt_amount_quote
+    |> Decimal.sub(Decimal.mult(max_ltv, collateral_amount_quote))
+    |> Decimal.div(d)
+  end
 end

@@ -81,6 +81,9 @@ defmodule Kujira.Bow.Leverage do
     end
   end
 
+  alias Kujira.Bow.Pool.Stable
+  alias Kujira.Bow.Leverage.Position
+  alias Kujira.Bow.Pool.Xyk
   alias Kujira.Bow
   alias Kujira.Token
   alias Kujira.Ghost
@@ -179,63 +182,35 @@ defmodule Kujira.Bow.Leverage do
   end
 
   @doc """
-  Returns a tuple of {token, price, amount} of collateral at risk at the speciifc price point
+  Returns a tuple of {token,  amount} of collateral at risk for a given position
   """
-  @spec liquidation_price(
-          Bow.Leverage.t(),
-          Bow.Pool.t(),
-          Bow.Status.t(),
-          Kujira.Ghost.Vault.Status.t(),
-          Kujira.Ghost.Vault.Status.t(),
-          Decimal.t(),
-          Decimal.t(),
-          Decimal.t()
-        ) :: {Token.t(), Decimal.t(), integer()}
-  def liquidation_price(
+  @spec at_risk_collateral(__MODULE__.t(), Xyk.t() | Stable.t(), Position.t()) ::
+          {Token.t(), Decimal.t(), integer()}
+  def at_risk_collateral(
         %__MODULE__{
           token_base: token_base,
-          token_quote: token_quote,
-          max_ltv: max_ltv
-        },
-        %Bow.Pool.Xyk{},
-        %Kujira.Bow.Status{} = pool_status,
-        %Ghost.Vault.Status{debt_ratio: base_debt_ratio},
-        %Ghost.Vault.Status{debt_ratio: quote_debt_ratio},
-        %Decimal{} = lp_amount,
-        %Decimal{} = debt_shares_base,
-        %Decimal{} = debt_shares_quote
+          token_quote: token_quote
+        } = leverage,
+        %Xyk{},
+        %Position{} = p
       ) do
-    debt_amount_base = Decimal.mult(debt_shares_base, base_debt_ratio)
-    debt_amount_quote = Decimal.mult(debt_shares_quote, quote_debt_ratio)
-
-    collateral_amount_base =
-      Decimal.div(lp_amount, pool_status.lp_amount)
-      |> Decimal.mult(pool_status.base_amount)
-
-    collateral_amount_quote =
-      Decimal.div(lp_amount, pool_status.lp_amount)
-      |> Decimal.mult(pool_status.quote_amount)
-
-    d = max_ltv |> Decimal.mult(collateral_amount_base) |> Decimal.sub(debt_amount_base)
-
     liquidation_price =
-      Decimal.sub(debt_amount_quote, Decimal.mult(max_ltv, collateral_amount_quote))
-      |> Decimal.div(d)
+      Position.liquidation_price(leverage, p) |> IO.inspect(label: :liquidation_pruice)
 
     # Unliquidatable
     if Decimal.lt?(liquidation_price, 0) do
       {token_base, Decimal.from_float(0.0), 0}
     else
-      k = Decimal.mult(collateral_amount_base, collateral_amount_quote)
+      k = Decimal.mult(p.collateral_amount_base, p.collateral_amount_quote)
       liquidation_collateral_base = k |> Decimal.div(liquidation_price) |> Decimal.sqrt()
 
       liquidation_collateral_quote = Decimal.mult(liquidation_price, liquidation_collateral_base)
 
       remaining_debt_base =
-        debt_amount_base |> Decimal.sub(liquidation_collateral_base) |> Decimal.max(0)
+        p.debt_amount_base |> Decimal.sub(liquidation_collateral_base) |> Decimal.max(0)
 
       remaining_debt_quote =
-        debt_amount_quote |> Decimal.sub(liquidation_collateral_quote) |> Decimal.max(0)
+        p.debt_amount_quote |> Decimal.sub(liquidation_collateral_quote) |> Decimal.max(0)
 
       # One of these two will be zero. Do a comparison to check
       if Decimal.gt?(remaining_debt_quote, remaining_debt_base) do
@@ -247,18 +222,7 @@ defmodule Kujira.Bow.Leverage do
     end
   end
 
-  def liquidation_price(
-        %__MODULE__{
-          token_base: token_base
-        },
-        _,
-        %Bow.Status{},
-        %Ghost.Vault.Status{},
-        %Ghost.Vault.Status{},
-        %Decimal{},
-        %Decimal{},
-        %Decimal{}
-      ) do
+  def at_risk_collateral(%__MODULE__{token_base: token_base}, %Stable{}, _) do
     # TODO: Determine whether liquidation price makes sense for a stable pool, as it's impossible to know the ratio of asset in the pool for a given price
     # Perhaps we just naively put the total amount of each asset at the max ltv
     {token_base, Decimal.from_float(0.0), 0}

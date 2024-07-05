@@ -119,35 +119,18 @@ defmodule Kujira.Bow do
          {:ok, %{status: %Status{} = pool_status}} <- load_pool(channel, pool),
          {:ok, models} <- Contract.query_state_all(channel, market.address),
          {:ok, vault_base} <- Contract.get(channel, market.ghost_vault_base),
-         {:ok, %{status: %Ghost.Vault.Status{} = vault_base_status}} <-
-           Ghost.load_vault(channel, vault_base),
+         {:ok, vault_base} <- Ghost.load_vault(channel, vault_base),
          {:ok, vault_quote} <- Contract.get(channel, market.ghost_vault_quote),
-         {:ok, %{status: %Ghost.Vault.Status{} = vault_quote_status}} <-
-           Kujira.Ghost.load_vault(channel, vault_quote) do
+         {:ok, vault_quote} <- Kujira.Ghost.load_vault(channel, vault_quote) do
       {health_base, health_quote} =
         models
         |> Map.values()
         |> Enum.reduce(
           {%{}, %{}},
           fn model, {health_base, health_quote} ->
-            with %{
-                   #  "holder" => holder,
-                   "debt_shares" => [debt_shares_base, debt_shares_quote],
-                   "lp_amount" => lp_amount
-                 } <- model,
-                 {debt_shares_base, ""} <- Decimal.parse(debt_shares_base),
-                 {debt_shares_quote, ""} <- Decimal.parse(debt_shares_quote),
-                 {lp_amount, ""} <- Decimal.parse(lp_amount) do
-              case Leverage.liquidation_price(
-                     market,
-                     pool,
-                     pool_status,
-                     vault_base_status,
-                     vault_quote_status,
-                     lp_amount,
-                     debt_shares_base,
-                     debt_shares_quote
-                   ) do
+            with {:ok, position} <-
+                   Position.from_query(vault_base, vault_quote, pool_status, model) do
+              case Leverage.at_risk_collateral(market, pool, position) do
                 {%Token{denom: ^base_denom}, price, amount} ->
                   {
                     Map.update(
