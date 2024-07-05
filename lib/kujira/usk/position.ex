@@ -63,9 +63,6 @@ defmodule Kujira.Usk.Position do
          interest_amount: interest_amount,
          debt_amount: interest_amount + mint_amount
        }}
-    else
-      _ ->
-        :error
     end
   end
 

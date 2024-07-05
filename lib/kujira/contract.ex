@@ -128,7 +128,7 @@ defmodule Kujira.Contract do
   end
 
   @doc """
-  Queries the full, raw contract state at an address. Default 1h cache
+  Queries the full, raw contract state at an address
   """
   @spec query_state_all(GRPC.Channel.t(), String.t()) ::
           {:ok, map()} | {:error, GRPC.RPCError.t()}

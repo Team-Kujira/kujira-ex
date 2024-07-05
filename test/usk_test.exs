@@ -168,6 +168,26 @@ defmodule KujiraUskTest do
            end)
   end
 
+  test "loads positions", %{channel: channel} do
+    {:ok, market} =
+      Usk.get_market(
+        channel,
+        @market
+      )
+
+    list = Usk.list_positions(channel, market)
+
+    assert Enum.count(list) > 0
+
+    assert Enum.all?(list, fn
+             %Usk.Position{} ->
+               true
+
+             _ ->
+               false
+           end)
+  end
+
   test "extracts position change events from a transaction" do
     # Deposit + Borrow
     %{tx_response: response} =

@@ -216,4 +216,23 @@ defmodule Kujira.Usk do
       _ -> true
     end)
   end
+
+  @doc """
+  Loads all positions via query_state_all, inheriting the same memoization
+  """
+  @spec list_positions(GRPC.Channel.t(), Market.t()) ::
+          %Stream{}
+  def list_positions(channel, market) do
+    with {:ok, state} <- Contract.query_state_all(channel, market.address) do
+      Enum.reduce(state, [], fn {_, v}, acc ->
+        case Position.from_query(market, v) do
+          {:ok, position} ->
+            [position | acc]
+
+          _ ->
+            acc
+        end
+      end)
+    end
+  end
 end

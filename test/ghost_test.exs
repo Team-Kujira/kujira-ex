@@ -237,6 +237,29 @@ defmodule KujiraGhostTest do
            end)
   end
 
+  test "loads positions", %{channel: channel} do
+    {:ok, market} =
+      Ghost.get_market(
+        channel,
+        "kujira1aakur92cpmlygdcecruk5t8zjqtjnkf8fs8qlhhzuy5hkcrjddfs585grm"
+      )
+
+    {:ok, vault} = Kujira.Contract.get(channel, market.vault)
+    {:ok, vault} = Ghost.load_vault(channel, vault)
+
+    list = Ghost.list_positions(channel, market, vault)
+
+    assert Enum.count(list) > 0
+
+    assert Enum.all?(list, fn
+             %Ghost.Position{} ->
+               true
+
+             _ ->
+               false
+           end)
+  end
+
   test "extracts position change events from a transaction" do
     # Deposit + Borrow
     %{tx_response: response} =
