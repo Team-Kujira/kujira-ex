@@ -9,7 +9,7 @@ defmodule Kujira.Orca do
   alias Kujira.Orca.Queue
   use Memoize
 
-  @code_ids Application.compile_env(:kujira, __MODULE__, code_ids: [234, 344])
+  @code_ids Application.compile_env(:kujira, __MODULE__, code_ids: [234, 349])
             |> Keyword.get(:code_ids)
 
   @doc """
