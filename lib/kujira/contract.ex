@@ -79,7 +79,7 @@ defmodule Kujira.Contract do
     end)
   end
 
-  @spec get(Channel.t(), {module(), String.t()}) ::
+  @spec get(Channel.t(), {module(), String.t()} | struct()) ::
           {:ok, struct()} | {:error, any()}
   def get(channel, {module, address}) do
     Memoize.Cache.get_or_run({__MODULE__, :get, [{module, address}]}, fn ->
@@ -89,6 +89,8 @@ defmodule Kujira.Contract do
       end
     end)
   end
+
+  def get(_channel, loaded), do: loaded
 
   @spec list(GRPC.Channel.t(), module(), list(integer())) ::
           {:ok, list(struct())} | {:error, GRPC.RPCError.t()}
