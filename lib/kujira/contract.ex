@@ -90,7 +90,7 @@ defmodule Kujira.Contract do
     end)
   end
 
-  def get(_channel, loaded), do: loaded
+  def get(_channel, loaded), do: {:ok, loaded}
 
   @spec list(GRPC.Channel.t(), module(), list(integer())) ::
           {:ok, list(struct())} | {:error, GRPC.RPCError.t()}
