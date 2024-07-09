@@ -60,7 +60,7 @@ defmodule Kujira.Invalidator do
     # Only the one where it actually matches the protocol will be affected
     scan_attributes(rest, [
       {Kujira.Contract, :query_state_all, [value]},
-      {Kujira.Contract, :query_state_smart, [value]},
+      {Kujira.Contract, :query_state_smart, [value, :_]},
       {Kujira.Bow, :load_pool, [value]} | collection
     ])
   end
