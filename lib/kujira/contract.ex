@@ -93,38 +93,48 @@ defmodule Kujira.Contract do
   @spec list(GRPC.Channel.t(), module(), list(integer())) ::
           {:ok, list(struct())} | {:error, GRPC.RPCError.t()}
   def list(channel, module, code_ids) when is_list(code_ids) do
-    with {:ok, contracts} <- by_codes(channel, code_ids),
-         {:ok, struct} <-
-           contracts
-           |> Task.async_stream(&get(channel, {module, &1}), timeout: 30_000)
-           |> Enum.reduce({:ok, []}, fn
-             {:ok, {:ok, x}}, {:ok, xs} ->
-               {:ok, [x | xs]}
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :list, [module, code_ids]},
+      fn ->
+        with {:ok, contracts} <- by_codes(channel, code_ids),
+             {:ok, struct} <-
+               contracts
+               |> Task.async_stream(&get(channel, {module, &1}), timeout: 30_000)
+               |> Enum.reduce({:ok, []}, fn
+                 {:ok, {:ok, x}}, {:ok, xs} ->
+                   {:ok, [x | xs]}
 
-             _, err ->
-               err
-           end) do
-      {:ok, struct}
-    else
-      err ->
-        err
-    end
+                 _, err ->
+                   err
+               end) do
+          {:ok, struct}
+        else
+          err ->
+            err
+        end
+      end
+    )
   end
 
   @spec query_state_smart(GRPC.Channel.t(), String.t(), map()) ::
           {:ok, map()} | {:error, GRPC.RPCError.t()}
   def query_state_smart(channel, address, query) do
-    with {:ok, %{data: data}} <-
-           Stub.smart_contract_state(
-             channel,
-             QuerySmartContractStateRequest.new(
-               address: address,
-               query_data: Jason.encode!(query)
-             )
-           ),
-         {:ok, res} <- Jason.decode(data) do
-      {:ok, res}
-    end
+    Memoize.Cache.get_or_run(
+      {__MODULE__, :query_state_smart, [address, query]},
+      fn ->
+        with {:ok, %{data: data}} <-
+               Stub.smart_contract_state(
+                 channel,
+                 QuerySmartContractStateRequest.new(
+                   address: address,
+                   query_data: Jason.encode!(query)
+                 )
+               ),
+             {:ok, res} <- Jason.decode(data) do
+          {:ok, res}
+        end
+      end
+    )
   end
 
   @doc """
