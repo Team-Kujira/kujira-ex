@@ -47,18 +47,13 @@ defmodule Kujira.Usk do
 
   @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | {:error, GRPC.RPCError.t()}
   def load_market(channel, market) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :load_market, [market.address]},
-      fn ->
-        with {:ok, res} <-
-               Contract.query_state_smart(channel, market.address, %{status: %{}}),
-             {:ok, status} <- Market.Status.from_query(res) do
-          {:ok, %{market | status: status}}
-        else
-          err -> err
-        end
-      end
-    )
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, market.address, %{status: %{}}),
+         {:ok, status} <- Market.Status.from_query(res) do
+      {:ok, %{market | status: status}}
+    else
+      err -> err
+    end
   end
 
   @doc """
@@ -82,18 +77,13 @@ defmodule Kujira.Usk do
   """
   @spec load_margin(Channel.t(), Margin.t()) :: {:ok, Margin.t()} | {:error, GRPC.RPCError.t()}
   def load_margin(channel, margin) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :load_margin, [margin.address]},
-      fn ->
-        with {:ok, res} <-
-               Contract.query_state_smart(channel, margin.address, %{status: %{}}),
-             {:ok, status} <- Market.Status.from_query(res) do
-          {:ok, %{margin | market: %{margin.market | status: status}}}
-        else
-          err -> err
-        end
-      end
-    )
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, margin.address, %{status: %{}}),
+         {:ok, status} <- Market.Status.from_query(res) do
+      {:ok, %{margin | market: %{margin.market | status: status}}}
+    else
+      err -> err
+    end
   end
 
   @doc """
@@ -103,20 +93,15 @@ defmodule Kujira.Usk do
   @spec load_position(Channel.t(), Market.t(), String.t()) ::
           {:ok, Position.t()} | {:error, GRPC.RPCError.t()}
   def load_position(channel, market, borrower) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :load_position, [market.address, borrower]},
-      fn ->
-        with {:ok, res} <-
-               Contract.query_state_smart(channel, market.address, %{
-                 position: %{address: borrower}
-               }),
-             {:ok, position} <- Position.from_query(market, res) do
-          {:ok, position}
-        else
-          err -> err
-        end
-      end
-    )
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, market.address, %{
+             position: %{address: borrower}
+           }),
+         {:ok, position} <- Position.from_query(market, res) do
+      {:ok, position}
+    else
+      err -> err
+    end
   end
 
   @doc """

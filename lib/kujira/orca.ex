@@ -34,17 +34,12 @@ defmodule Kujira.Orca do
 
   @spec load_queue(Channel.t(), Queue.t()) :: {:ok, Queue.t()} | {:error, GRPC.RPCError.t()}
   def load_queue(channel, queue) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :load_queue, [queue.address]},
-      fn ->
-        with {:ok, %{"bid_pools" => bid_pools}} <-
-               Contract.query_state_smart(channel, queue.address, %{bid_pools: %{limit: 30}}) do
-          {:ok, Queue.load_pools(bid_pools, queue)}
-        else
-          err -> err
-        end
-      end
-    )
+    with {:ok, %{"bid_pools" => bid_pools}} <-
+           Contract.query_state_smart(channel, queue.address, %{bid_pools: %{limit: 30}}) do
+      {:ok, Queue.load_pools(bid_pools, queue)}
+    else
+      err -> err
+    end
   end
 
   @doc """
@@ -53,26 +48,21 @@ defmodule Kujira.Orca do
   @spec load_bid(Channel.t(), Queue.t(), String.t()) ::
           {:ok, Bid.t()} | {:error, :not_found} | {:error, GRPC.RPCError.t()}
   def load_bid(channel, queue, idx) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :load_bid, [queue.address, idx]},
-      fn ->
-        with {:ok, bid} <-
-               Contract.query_state_smart(channel, queue.address, %{bid: %{bid_idx: idx}}) do
-          {:ok, Bid.from_query(queue, bid)}
-        else
-          {:error,
-           %GRPC.RPCError{
-             message:
-               "codespace wasm code 9: query wasm contract failed: Generic error: No bids with the specified information exist",
-             status: 2
-           }} ->
-            {:error, :not_found}
+    with {:ok, bid} <-
+           Contract.query_state_smart(channel, queue.address, %{bid: %{bid_idx: idx}}) do
+      {:ok, Bid.from_query(queue, bid)}
+    else
+      {:error,
+       %GRPC.RPCError{
+         message:
+           "codespace wasm code 9: query wasm contract failed: Generic error: No bids with the specified information exist",
+         status: 2
+       }} ->
+        {:error, :not_found}
 
-          err ->
-            err
-        end
-      end
-    )
+      err ->
+        err
+    end
   end
 
   @doc """
@@ -81,21 +71,16 @@ defmodule Kujira.Orca do
   @spec load_bids(Channel.t(), Queue.t(), String.t()) ::
           {:ok, list(Bid.t())} | {:error, GRPC.RPCError.t()}
   def load_bids(channel, queue, address, start_after \\ nil) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :load_bids, [queue.address, address]},
-      fn ->
-        with {:ok, %{"bids" => bids}} <-
-               Contract.query_state_smart(channel, queue.address, %{
-                 bids_by_user: %{bidder: address, start_after: start_after, limit: 30}
-               }) do
-          # TODO: Page through > 30
-          bids = Enum.map(bids, &Bid.from_query(queue, &1))
-          {:ok, bids}
-        else
-          err -> err
-        end
-      end
-    )
+    with {:ok, %{"bids" => bids}} <-
+           Contract.query_state_smart(channel, queue.address, %{
+             bids_by_user: %{bidder: address, start_after: start_after, limit: 30}
+           }) do
+      # TODO: Page through > 30
+      bids = Enum.map(bids, &Bid.from_query(queue, &1))
+      {:ok, bids}
+    else
+      err -> err
+    end
   end
 
   @doc """

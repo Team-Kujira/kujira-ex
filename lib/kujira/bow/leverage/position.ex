@@ -75,7 +75,8 @@ defmodule Kujira.Bow.Leverage.Position do
           "debt_shares" => [debt_shares_base, debt_shares_quote],
           "lp_amount" => lp_amount
         }
-      ) do
+      )
+      when is_binary(debt_shares_base) and is_binary(debt_shares_quote) do
     with {lp_amount, ""} <- Integer.parse(lp_amount),
          {debt_shares_base, ""} <- Integer.parse(debt_shares_base),
          {debt_shares_quote, ""} <- Integer.parse(debt_shares_quote) do
@@ -116,6 +117,25 @@ defmodule Kujira.Bow.Leverage.Position do
          collateral_amount_quote: collateral_amount_quote
        }}
     end
+  end
+
+  def from_query(
+        %Leverage{} = l,
+        %Vault{debt_token: %{denom: debt_denom_base}} = b,
+        %Vault{debt_token: %{denom: debt_denom_quote}} = q,
+        p,
+        %{
+          "debt_shares" => shares
+        } = res
+      )
+      when is_list(shares) do
+    debt_shares_base =
+      shares |> Enum.find(%{}, &(&1["denom"] == debt_denom_base)) |> Map.get("amount", "0")
+
+    debt_shares_quote =
+      shares |> Enum.find(%{}, &(&1["denom"] == debt_denom_quote)) |> Map.get("amount", "0")
+
+    from_query(l, b, q, p, Map.put(res, "debt_shares", [debt_shares_base, debt_shares_quote]))
   end
 
   def from_query(%Leverage{}, %Vault{}, %Vault{}, %Xyk{}, _), do: :error

@@ -47,18 +47,13 @@ defmodule Kujira.Ghost do
 
   @spec load_market(Channel.t(), Market.t()) :: {:ok, Market.t()} | {:error, GRPC.RPCError.t()}
   def load_market(channel, market) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :load_market, [market.address]},
-      fn ->
-        with {:ok, res} <-
-               Contract.query_state_smart(channel, market.address, %{status: %{}}),
-             {:ok, status} <- Market.Status.from_query(res) do
-          {:ok, %{market | status: status}}
-        else
-          err -> err
-        end
-      end
-    )
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, market.address, %{status: %{}}),
+         {:ok, status} <- Market.Status.from_query(res) do
+      {:ok, %{market | status: status}}
+    else
+      err -> err
+    end
   end
 
   @doc """
@@ -68,22 +63,17 @@ defmodule Kujira.Ghost do
   @spec load_position(Channel.t(), Market.t(), String.t()) ::
           {:ok, Position.t()} | {:error, GRPC.RPCError.t()}
   def load_position(channel, market, borrower) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :load_position, [market.address, borrower]},
-      fn ->
-        with {:ok, res} <-
-               Contract.query_state_smart(channel, market.address, %{
-                 position: %{holder: borrower}
-               }),
-             {:ok, vault} <- Contract.get(channel, market.vault),
-             {:ok, vault} <- load_vault(channel, vault),
-             {:ok, position} <- Position.from_query(market, vault, res) do
-          {:ok, position}
-        else
-          err -> err
-        end
-      end
-    )
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, market.address, %{
+             position: %{holder: borrower}
+           }),
+         {:ok, vault} <- Contract.get(channel, market.vault),
+         {:ok, vault} <- load_vault(channel, vault),
+         {:ok, position} <- Position.from_query(market, vault, res) do
+      {:ok, position}
+    else
+      err -> err
+    end
   end
 
   @doc """
@@ -182,18 +172,13 @@ defmodule Kujira.Ghost do
 
   @spec load_vault(Channel.t(), Vault.t()) :: {:ok, Vault.t()} | {:error, GRPC.RPCError.t()}
   def load_vault(channel, vault) do
-    Memoize.Cache.get_or_run(
-      {__MODULE__, :load_vault, [vault.address]},
-      fn ->
-        with {:ok, res} <-
-               Contract.query_state_smart(channel, vault.address, %{status: %{}}),
-             {:ok, status} <- Vault.Status.from_query(res) do
-          {:ok, %{vault | status: status}}
-        else
-          err -> err
-        end
-      end
-    )
+    with {:ok, res} <-
+           Contract.query_state_smart(channel, vault.address, %{status: %{}}),
+         {:ok, status} <- Vault.Status.from_query(res) do
+      {:ok, %{vault | status: status}}
+    else
+      err -> err
+    end
   end
 
   @doc """

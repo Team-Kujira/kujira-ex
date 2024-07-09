@@ -72,7 +72,28 @@ defmodule KujiraBowTest do
         "kujira1hc0xq4mu536na35ypvyr8ud66fl57080m54eg0fd5ce2ns63np3qfh79yt"
       )
 
-    positions = Bow.list_positions(channel, leverage)
+    positions =
+      Bow.list_positions(channel, leverage, "kujira1gee7m7kygxuc4xk483ceuqcfczv48ygt27xgwk")
+
+    assert Enum.count(positions) > 0
+
+    assert Enum.all?(positions, fn
+             %Leverage.Position{} ->
+               true
+
+             _ ->
+               false
+           end)
+  end
+
+  test "loads all positions", %{channel: channel} do
+    {:ok, leverage} =
+      Bow.get_leverage(
+        channel,
+        "kujira1hc0xq4mu536na35ypvyr8ud66fl57080m54eg0fd5ce2ns63np3qfh79yt"
+      )
+
+    positions = Bow.list_all_positions(channel, leverage)
 
     assert Enum.count(positions) > 0
 

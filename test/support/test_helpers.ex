@@ -3,7 +3,7 @@ defmodule Kujira.TestHelpers do
     quote do
       setup do
         {:ok, channel} =
-          GRPC.Stub.connect("kujira-grpc.polkachu.com", 11890,
+          GRPC.Stub.connect("kujira.grpc.kjnodes.com", 11390,
             interceptors: [{GRPC.Logger.Client, level: :info}]
           )
 

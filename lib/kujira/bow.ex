@@ -177,11 +177,39 @@ defmodule Kujira.Bow do
   end
 
   @doc """
+  Loads all user positions
+  """
+  @spec list_positions(GRPC.Channel.t(), Leverage.t(), String.t()) ::
+          list(Position.t())
+  def list_positions(channel, leverage, address) do
+    with {:ok, vault_base} <- Contract.get(channel, leverage.ghost_vault_base),
+         {:ok, vault_base} <- Ghost.load_vault(channel, vault_base),
+         {:ok, vault_quote} <- Contract.get(channel, leverage.ghost_vault_quote),
+         {:ok, vault_quote} <- Ghost.load_vault(channel, vault_quote),
+         {:ok, pool} <- Contract.get(channel, leverage.bow),
+         {:ok, pool} <- Bow.load_pool(channel, pool),
+         {:ok, %{"positions" => positions}} <-
+           Contract.query_state_smart(channel, leverage.address, %{
+             positions_by_holder: %{holder: address}
+           }) do
+      Enum.reduce(positions, [], fn v, acc ->
+        case Position.from_query(leverage, vault_base, vault_quote, pool, v) do
+          {:ok, position} ->
+            [position | acc]
+
+          _ ->
+            acc
+        end
+      end)
+    end
+  end
+
+  @doc """
   Loads all positions via query_state_all, inheriting the same memoization
   """
-  @spec list_positions(GRPC.Channel.t(), Leverage.t()) ::
+  @spec list_all_positions(GRPC.Channel.t(), Leverage.t()) ::
           list(Position.t())
-  def list_positions(channel, leverage) do
+  def list_all_positions(channel, leverage) do
     with {:ok, vault_base} <- Contract.get(channel, leverage.ghost_vault_base),
          {:ok, vault_base} <- Ghost.load_vault(channel, vault_base),
          {:ok, vault_quote} <- Contract.get(channel, leverage.ghost_vault_quote),
