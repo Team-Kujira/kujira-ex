@@ -105,4 +105,27 @@ defmodule KujiraBowTest do
                false
            end)
   end
+
+  test "calculates xyk orders", %{channel: channel} do
+    {:ok, contract} =
+      Bow.get_pool(channel, "kujira13t2d80s8a9lnzfzq4n6e0dde9n7ans50cuuv6t3ahh5cqudxvueql4ynp9")
+
+    pool = %{contract | status: %Bow.Status{quote_amount: 1_000_000, base_amount: 500_000}}
+
+    {%{status: status}, {price, amount}} =
+      Bow.Pool.Xyk.compute_order(pool, Decimal.from_float(0.001), :bid)
+
+    assert price == Decimal.new("1.9940")
+    assert amount == 1000
+    assert status.quote_amount == 999_000
+    assert status.base_amount == 500_501
+
+    {%{status: status}, {price, amount}} =
+      Bow.Pool.Xyk.compute_order(pool, Decimal.from_float(0.001), :ask)
+
+    assert price == Decimal.new("2.0060")
+    assert amount == 500
+    assert status.quote_amount == 1_001_003
+    assert status.base_amount == 499_500
+  end
 end

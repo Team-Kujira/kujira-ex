@@ -109,4 +109,116 @@ defmodule Kujira.Bow.Pool.Xyk do
   end
 
   def from_config(_, _, _), do: {:error, :invalid_config}
+
+  @doc """
+  Returns the orders placed by the pool for a given set of intervals
+  """
+  @spec compute_orders(__MODULE__.t()) :: [{Decimal.t(), non_neg_integer()}]
+  def compute_orders(%__MODULE__{intervals: intervals} = p) do
+    {_, bids} =
+      Enum.reduce(intervals, {p, []}, fn v, {x, y} ->
+        {x, o} = compute_order(x, v, :bid)
+        {x, [o | y]}
+      end)
+
+    {_, asks} =
+      Enum.reduce(intervals, {p, []}, fn v, {x, y} ->
+        {x, o} = compute_order(x, v, :bid)
+        {x, [o | y]}
+      end)
+
+    Enum.concat(bids, asks)
+  end
+
+  @doc """
+  Returns the next order placed by the pool for a given set of intervals
+  """
+  @spec compute_order(__MODULE__.t(), Decimal.t(), :bid | :ask) ::
+          {__MODULE__.t(), {Decimal.t(), non_neg_integer()}}
+  def compute_order(
+        %__MODULE__{
+          fee: fee,
+          price_precision: price_precision,
+          status: %Status{base_amount: base_amount, quote_amount: quote_amount} = s
+        } = p,
+        i,
+        :bid
+      ) do
+    offer_amount = Decimal.mult(i, Decimal.new(quote_amount))
+
+    {new_quote_amount, target_base_amount, fee_amount} =
+      size_order(quote_amount, base_amount, offer_amount, fee)
+
+    new_base_amount = Decimal.add(target_base_amount, fee_amount)
+
+    return_amount =
+      target_base_amount
+      |> Decimal.sub(base_amount)
+      |> Decimal.add(fee_amount)
+
+    price = offer_amount |> Decimal.div(return_amount) |> Decimal.round(price_precision)
+
+    {%{
+       p
+       | status: %{
+           s
+           | base_amount: to_integer(new_base_amount),
+             quote_amount: to_integer(new_quote_amount)
+         }
+     }, {price, to_integer(offer_amount)}}
+  end
+
+  def compute_order(
+        %__MODULE__{
+          fee: fee,
+          price_precision: price_precision,
+          status: %Status{base_amount: base_amount, quote_amount: quote_amount} = s
+        } = p,
+        i,
+        :ask
+      ) do
+    offer_amount = Decimal.mult(i, Decimal.new(base_amount))
+
+    {new_base_amount, target_quote_amount, fee_amount} =
+      size_order(base_amount, quote_amount, offer_amount, fee)
+
+    new_quote_amount = Decimal.add(target_quote_amount, fee_amount)
+
+    return_amount =
+      target_quote_amount
+      |> Decimal.sub(quote_amount)
+      |> Decimal.add(fee_amount)
+
+    price = return_amount |> Decimal.div(offer_amount) |> Decimal.round(price_precision)
+
+    {%{
+       p
+       | status: %{
+           s
+           | base_amount: to_integer(new_base_amount),
+             quote_amount: to_integer(new_quote_amount)
+         }
+     }, {price, to_integer(offer_amount)}}
+  end
+
+  defp size_order(offer_balance, ask_balance, offer_amount, fee) do
+    k = Decimal.mult(offer_balance, ask_balance)
+    new_amount = Decimal.sub(offer_balance, offer_amount)
+    target_amount = Decimal.div(k, new_amount)
+    ask_amount = Decimal.sub(target_amount, ask_balance)
+    fee_amount = Decimal.mult(ask_amount, fee)
+    new_target_amount = Decimal.add(target_amount, fee_amount)
+
+    {new_amount, new_target_amount, fee_amount}
+  end
+
+  @doc """
+  Returns the ratio of deposits that are deployed into the pool for a given interval configuration
+  """
+  @spec utilization(__MODULE__.t()) :: Decimal.t()
+  def utilization(%__MODULE__{intervals: intervals}) do
+    Enum.reduce(intervals, &Decimal.add/2)
+  end
+
+  defp to_integer(d), do: d |> Decimal.round(0, :floor) |> Decimal.to_integer()
 end
